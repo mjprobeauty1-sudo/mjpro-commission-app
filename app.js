@@ -216,12 +216,18 @@ async function loadRecordsForMonth(){
 }
 
 async function renderAll(){
-  await loadRecordsForMonth();
-  renderStaffForm();
-  renderMyRecords();
-  if(currentProfile.role==='admin'){
-    renderAdminSummary();
-    renderAdminRecordsTable();
+  try{
+    await loadRecordsForMonth();
+    updatePreview();
+    renderMyRecords();
+    if(currentProfile.role==='admin'){
+      renderAdminSummary();
+      renderAdminRecordsTable();
+    }
+  }catch(e){
+    console.error('renderAll failed:', e);
+    const errEl = document.getElementById('addRecordError');
+    if(errEl) errEl.textContent = '画面刷新失败：'+e.message+'（记录可能已经存进去了，请刷新页面确认）';
   }
 }
 
