@@ -38,7 +38,7 @@ let people = [];
 let records = [];
 let antiAgingProducts = [];
 let antiagingOpItems = [];
-let settings = { reviewDefaultAmount:4, splitFacial:false, splitLash:false, splitIcepoint:false };
+let settings = { reviewDefaultAmount:4 };
 let currentType = 'invite';
 
 function personName(id){
@@ -53,13 +53,6 @@ function personalAdTotals(monthRecs){
     totals[r.personId] = (totals[r.personId]||0) + Number(r.amount);
   });
   return totals;
-}
-
-function opTypeSplitFlag(key){
-  if(key==='facial') return settings.splitFacial;
-  if(key==='lash') return settings.splitLash;
-  if(key==='icepoint') return settings.splitIcepoint;
-  return false;
 }
 
 function allocationsFor(record, adRateByPerson){
@@ -77,12 +70,6 @@ function allocationsFor(record, adRateByPerson){
       const op = OP_TYPES.find(o=>o.key===record.type);
       const person = people.find(p=>p.id===record.personId);
       const fee = person ? Number(person[op.field])||0 : 0;
-      if(opTypeSplitFlag(op.key)){
-        return [
-          {who:personName(record.personId), role:`${op.rateLabel}（对半，本人）`, amount: fee/2},
-          {who:'公司', role:`${op.rateLabel}（对半，公司）`, amount: fee/2}
-        ];
-      }
       return [{who:personName(record.personId), role:op.rateLabel, amount: fee}];
     }
     case 'antiaging': {
@@ -201,7 +188,7 @@ async function loadAllData(){
   antiAgingProducts = (prodRows||[]).map(r=>({name:r.name, commission:r.commission, id:r.id}));
   antiagingOpItems = (opRows||[]).map(r=>({name:r.name, split:r.split, rates:r.rates||{}, id:r.id}));
   if(setRow){
-    settings = { reviewDefaultAmount:Number(setRow.review_default_amount)||4, splitFacial:!!setRow.split_facial, splitLash:!!setRow.split_lash, splitIcepoint:!!setRow.split_icepoint };
+    settings = { reviewDefaultAmount:Number(setRow.review_default_amount)||4 };
   }
 }
 
@@ -375,12 +362,7 @@ function updatePreview(){
   } else if(OP_TYPE_KEYS.includes(currentType)){
     const op = OP_TYPES.find(o=>o.key===currentType);
     const fee = Number(currentProfile[op.field])||0;
-    if(opTypeSplitFlag(op.key)){
-      lines.push({label:`${op.rateLabel}（对半，本人）`, val: fee/2});
-      lines.push({label:`${op.rateLabel}（对半，公司）`, val: fee/2});
-    } else {
-      lines.push({label:op.rateLabel, val: fee});
-    }
+    lines.push({label:op.rateLabel, val: fee});
   } else if(currentType==='antiaging'){
     const val = document.getElementById('f_product').value;
     if(val.startsWith(ANTIAGING_OPFEE_VALUE_PREFIX)){
@@ -604,7 +586,6 @@ function renderOpRates(){
     <div style="margin-bottom:14px;">
       <div class="op-item-header">
         <span>${op.label}</span>
-        <label><input type="checkbox" data-split-op="${op.key}" ${opTypeSplitFlag(op.key)?'checked':''} /> 与公司平分（50%）</label>
       </div>
       <div class="roster-chips">
         ${people.map(p=>`<span class="roster-chip">${escapeHtml(p.name)} <input type="number" class="num" min="0" step="1" value="${p[op.field]||0}" data-op-rate="${p.id}" data-op-field="${op.field}" /></span>`).join('') || '<span class="empty">先添加人员</span>'}
@@ -612,17 +593,6 @@ function renderOpRates(){
     </div>
   `).join('');
 
-  wrap.querySelectorAll('[data-split-op]').forEach(cb=>{
-    cb.addEventListener('change', async ()=>{
-      const key = cb.getAttribute('data-split-op');
-      const col = key==='facial' ? 'split_facial' : key==='lash' ? 'split_lash' : 'split_icepoint';
-      if(key==='facial') settings.splitFacial = cb.checked;
-      if(key==='lash') settings.splitLash = cb.checked;
-      if(key==='icepoint') settings.splitIcepoint = cb.checked;
-      await sb.from('settings').update({[col]: cb.checked}).eq('id',1);
-      await renderAll();
-    });
-  });
   wrap.querySelectorAll('[data-op-rate]').forEach(inp=>{
     inp.addEventListener('change', async ()=>{
       const personId = inp.getAttribute('data-op-rate');
