@@ -113,6 +113,19 @@ function allocationsFor(record, adRateByPerson){
   }
 }
 
+function recordDetailText(r){
+  const parts = [];
+  if(r.type==='antiaging' && r.productName){
+    const val = r.productName;
+    if(val.startsWith(ANTIAGING_OPFEE_VALUE_PREFIX)) parts.push(val.slice(ANTIAGING_OPFEE_VALUE_PREFIX.length));
+    else if(val.startsWith(ANTIAGING_PRODUCT_VALUE_PREFIX)) parts.push(val.slice(ANTIAGING_PRODUCT_VALUE_PREFIX.length));
+  }
+  if(r.type==='invite'){ parts.push(r.closed ? '已成交' : '未成交'); }
+  if(r.type==='tattoo'){ parts.push(r.source==='self' ? '自招客户' : '公司客源'); }
+  if(r.note) parts.push(r.note);
+  return parts.join(' · ') || '—';
+}
+
 // ---------------- Login ----------------
 async function initLogin(){
   const { data, error } = await sb.rpc('list_login_names');
@@ -458,9 +471,10 @@ function renderMyRecords(){
     const sum = allocs.reduce((s,a)=>s+a.amount,0);
     total += sum;
     return `<tr>
-      <td class="num">${r.date}</td>
+      <td>${r.date}</td>
       <td>${TYPES[r.type].label}</td>
       <td>${escapeHtml(r.client||'—')}</td>
+      <td>${escapeHtml(recordDetailText(r))}</td>
       <td class="num" style="font-weight:600;">${fmt(sum)}</td>
       <td><span class="pill ${r.status==='paid'?'paid':'pending'}">${r.status==='paid'?'已结算':'待结算'}</span></td>
     </tr>`;
@@ -478,8 +492,8 @@ function renderMyRecords(){
     <h2>我本月的记录</h2>
     <div class="summary-strip"><div class="stat total"><p class="label">本月合计</p><p class="value num">${fmt(total)}</p></div></div>
     <div class="table-scroll">
-      <table><thead><tr><th>日期</th><th>类型</th><th>客户</th><th class="num">金额</th><th>状态</th></tr></thead>
-      <tbody>${rows || '<tr><td colspan="5" class="empty">本月还没有记录</td></tr>'}</tbody></table>
+      <table><thead><tr><th>日期</th><th>类型</th><th>客户</th><th>项目 / 备注</th><th class="num">金额</th><th>状态</th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="6" class="empty">本月还没有记录</td></tr>'}</tbody></table>
     </div>
   `;
 }
