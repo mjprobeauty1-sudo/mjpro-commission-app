@@ -1,47 +1,126 @@
-<!doctype html>
-<html lang="zh">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>MJPRO 团队提成系统</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="config.js"></script>
+<title>MJPRO 团队提成台账</title>
 <style>
 :root{
-  --paper:#F5F4EF; --paper-raised:#FFFFFF; --ink:#1A1815; --ink-soft:#6B6357; --line:#DDD7C9;
-  --accent:#96702E; --accent-soft:#F1E8D2; --accent-text:#6E5220;
-  --success:#3F6B52; --success-soft:#E3EDE1; --warning:#9C7327; --warning-soft:#F1E6CE;
-  --critical:#A23B3B; --critical-soft:#F5E1E1; --shadow:rgba(26,24,21,0.10);
+  --paper:#F5F4EF;
+  --paper-raised:#FFFFFF;
+  --ink:#1A1815;
+  --ink-soft:#6B6357;
+  --line:#DDD7C9;
+  --accent:#96702E;
+  --accent-soft:#F1E8D2;
+  --accent-text:#6E5220;
+  --success:#3F6B52;
+  --success-soft:#E3EDE1;
+  --warning:#9C7327;
+  --warning-soft:#F1E6CE;
+  --critical:#A23B3B;
+  --critical-soft:#F5E1E1;
+  --shadow:rgba(26,24,21,0.10);
   --font-sans:-apple-system,"PingFang SC","Segoe UI","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
   --font-num:"SFMono-Regular",ui-monospace,Menlo,Consolas,"Cascadia Mono",monospace;
 }
 @media (prefers-color-scheme: dark){
   :root{
-    --paper:#15130F; --paper-raised:#1D1A15; --ink:#EDE8DD; --ink-soft:#A69C89; --line:#33302A;
-    --accent:#D8B15E; --accent-soft:#2E2717; --accent-text:#E7C77E;
-    --success:#6FAE87; --success-soft:#1E2B21; --warning:#D2A25E; --warning-soft:#2E2717;
-    --critical:#E27E7E; --critical-soft:#33201F; --shadow:rgba(0,0,0,0.5);
+    --paper:#15130F;
+    --paper-raised:#1D1A15;
+    --ink:#EDE8DD;
+    --ink-soft:#A69C89;
+    --line:#33302A;
+    --accent:#D8B15E;
+    --accent-soft:#2E2717;
+    --accent-text:#E7C77E;
+    --success:#6FAE87;
+    --success-soft:#1E2B21;
+    --warning:#D2A25E;
+    --warning-soft:#2E2717;
+    --critical:#E27E7E;
+    --critical-soft:#33201F;
+    --shadow:rgba(0,0,0,0.5);
   }
+}
+:root[data-theme="dark"]{
+  --paper:#15130F;--paper-raised:#1D1A15;--ink:#EDE8DD;--ink-soft:#A69C89;--line:#33302A;
+  --accent:#D8B15E;--accent-soft:#2E2717;--accent-text:#E7C77E;
+  --success:#6FAE87;--success-soft:#1E2B21;--warning:#D2A25E;--warning-soft:#2E2717;
+  --critical:#E27E7E;--critical-soft:#33201F;--shadow:rgba(0,0,0,0.5);
+}
+:root[data-theme="light"]{
+  --paper:#F5F4EF;--paper-raised:#FFFFFF;--ink:#1A1815;--ink-soft:#6B6357;--line:#DDD7C9;
+  --accent:#96702E;--accent-soft:#F1E8D2;--accent-text:#6E5220;
+  --success:#3F6B52;--success-soft:#E3EDE1;--warning:#9C7327;--warning-soft:#F1E6CE;
+  --critical:#A23B3B;--critical-soft:#F5E1E1;--shadow:rgba(26,24,21,0.10);
 }
 *{box-sizing:border-box;}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-sans);}
-.wrap{max-width:1080px;margin:0 auto;padding:2rem 1.25rem 4rem;}
-.center-wrap{max-width:360px;margin:10vh auto;padding:0 1.25rem;}
-h1{font-size:22px;font-weight:600;margin:0 0 4px;}
-.eyebrow{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-text);margin:0 0 6px;font-weight:600;}
+.wrap{max-width:1140px;margin:0 auto;padding:2.5rem 1.5rem 4rem;}
+.masthead{display:flex;justify-content:space-between;align-items:flex-end;gap:1.5rem;margin-bottom:1.5rem;flex-wrap:wrap;}
+.masthead .eyebrow{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-text);margin:0 0 6px;font-weight:600;}
+.masthead h1{font-size:25px;font-weight:600;margin:0;text-wrap:balance;letter-spacing:-0.01em;}
+.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
 input,select,button,textarea{font-family:var(--font-sans);font-size:14px;color:var(--ink);}
-.num{font-family:var(--font-num);font-variant-numeric:tabular-nums;}
-input,select,textarea{background:var(--paper-raised);border:1px solid var(--line);border-radius:6px;padding:9px 10px;width:100%;}
-input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px;}
-button{cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--paper-raised);padding:9px 14px;font-weight:500;}
+.num,input[type="month"],input[type="date"]{font-family:var(--font-num);}
+input,select,textarea{background:var(--paper-raised);border:1px solid var(--line);border-radius:6px;padding:7px 10px;}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;}
+button{cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--paper-raised);padding:7px 14px;font-weight:500;transition:background .15s;}
 button:hover{background:var(--accent-soft);}
-button.primary{background:var(--accent);color:#1A1815;border-color:var(--accent);width:100%;}
-.field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
-.field label{font-size:12px;color:var(--ink-soft);}
-.panel{background:var(--paper-raised);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:1.25rem;}
+button.primary{background:var(--accent);color:#1A1815;border-color:var(--accent);}
+button.primary:hover{filter:brightness(1.06);}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+.num{font-variant-numeric:tabular-nums;}
+
+.summary-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:1.25rem;}
+.stat{background:var(--paper-raised);border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
+.stat .label{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px;}
+.stat .value{font-size:21px;font-weight:600;margin:0;}
+.stat.total{background:var(--accent-soft);border-color:var(--accent);}
+.stat.total .value{color:var(--accent-text);}
+
+.tier-box{display:flex;gap:16px;flex-wrap:wrap;background:var(--paper-raised);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin-bottom:1.75rem;align-items:center;}
+.tier-box .tier-item{font-size:13px;color:var(--ink-soft);}
+.tier-box .tier-item b{color:var(--ink);font-family:var(--font-num);font-weight:600;}
+.tier-box .tier-rate{background:var(--accent-soft);color:var(--accent-text);border-radius:999px;padding:2px 10px;font-family:var(--font-num);font-weight:600;font-size:12px;}
+
+.section-title{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 10px;}
+.op-split-title{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+.op-split-title label{display:flex;align-items:center;gap:6px;font-size:12px;letter-spacing:0;text-transform:none;font-weight:400;color:var(--ink-soft);white-space:nowrap;}
+.op-split-title input[type="checkbox"]{width:auto;}
+
+.roster-row{margin-bottom:1.75rem;}
+.roster-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.roster-chip{display:flex;align-items:center;gap:6px;background:var(--paper-raised);border:1px solid var(--line);border-radius:999px;padding:5px 6px 5px 12px;font-size:13px;}
+.roster-chip .del{background:none;border:none;color:var(--ink-soft);font-size:13px;padding:2px 6px;line-height:1;border-radius:999px;}
+.roster-chip .del:hover{color:var(--critical);background:var(--critical-soft);}
+.roster-chip input[type="number"]{width:64px;padding:3px 6px;border:1px solid transparent;background:var(--accent-soft);text-align:right;border-radius:4px;}
+.add-roster{display:flex;gap:8px;flex-wrap:wrap;}
+.add-roster input{width:160px;}
+
+.op-item-card{background:var(--paper-raised);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px;}
+.op-item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-weight:500;font-size:13px;}
+.op-item-header .del{background:none;border:none;color:var(--ink-soft);font-size:13px;padding:2px 6px;line-height:1;border-radius:999px;}
+.op-item-header .del:hover{color:var(--critical);background:var(--critical-soft);}
+
+.bulk-panel{margin-bottom:1.75rem;}
+.bulk-panel textarea{width:100%;min-height:140px;resize:vertical;font-family:var(--font-num);font-size:12.5px;line-height:1.5;}
+.bulk-actions{display:flex;gap:10px;margin-top:10px;}
+.bulk-preview-table{margin-top:16px;}
+.bulk-preview-table select,.bulk-preview-table input{font-size:12.5px;padding:5px 7px;}
+
+.statement-panel{margin-bottom:1.75rem;}
+.statement-panel .statement-controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+.statement-panel textarea{width:100%;min-height:200px;resize:vertical;font-family:var(--font-num);font-size:12.5px;line-height:1.6;}
+.statement-panel .statement-actions{display:flex;gap:10px;margin-top:10px;}
+
+.layout{display:grid;grid-template-columns:320px 1fr;gap:24px;align-items:start;}
+@media (max-width:800px){.layout{grid-template-columns:1fr;}}
+
+.panel{background:var(--paper-raised);border:1px solid var(--line);border-radius:12px;padding:18px;}
 .panel h2{font-size:14px;margin:0 0 14px;font-weight:600;}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
+.field label{font-size:12px;color:var(--ink-soft);}
+.field input,.field select{width:100%;}
+.field-row{display:flex;gap:10px;}
+.field-row .field{flex:1;min-width:0;}
 .hint{font-size:11px;color:var(--ink-soft);margin-top:2px;}
-.error-text{font-size:13px;color:var(--critical);margin-top:8px;min-height:1em;}
 .type-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
 .type-tabs button{padding:6px 10px;font-size:12px;border-radius:999px;}
 .type-tabs button.active{background:var(--accent);color:#1A1815;border-color:var(--accent);}
@@ -49,69 +128,1633 @@ button.primary{background:var(--accent);color:#1A1815;border-color:var(--accent)
 .preview-commission .row{display:flex;justify-content:space-between;}
 .preview-commission .row+.row{margin-top:4px;}
 .preview-commission .num{font-weight:600;}
-.summary-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:1.25rem;}
-.stat{background:var(--paper-raised);border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
-.stat .label{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px;}
-.stat .value{font-size:20px;font-weight:600;margin:0;}
-.stat.total{background:var(--accent-soft);border-color:var(--accent);}
-.stat.total .value{color:var(--accent-text);}
+.warn-flag{font-size:11px;color:var(--warning);margin-top:4px;}
+
 table{width:100%;border-collapse:collapse;font-size:13px;}
-th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);border-bottom:1px solid var(--line);padding:8px 8px;font-weight:500;}
-td{padding:8px 8px;border-bottom:1px solid var(--line);vertical-align:top;}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);border-bottom:1px solid var(--line);padding:8px 10px;font-weight:500;}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top;}
+tr:last-child td{border-bottom:none;}
 td.num,th.num{text-align:right;}
-.pill{font-size:11px;border-radius:999px;padding:3px 9px;font-weight:500;white-space:nowrap;display:inline-block;border:none;cursor:pointer;}
+.pill{font-size:11px;border-radius:999px;padding:3px 9px;font-weight:500;white-space:nowrap;display:inline-block;}
 .pill.paid{background:var(--success-soft);color:var(--success);}
 .pill.pending{background:var(--warning-soft);color:var(--warning);}
+.type-tag{font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-soft);}
+.alloc-line{font-size:12px;color:var(--ink-soft);}
+.alloc-line b{color:var(--ink);font-family:var(--font-num);font-weight:600;}
+.row-actions{display:flex;gap:6px;}
+.row-actions button{padding:4px 9px;font-size:12px;}
 .table-scroll{overflow-x:auto;}
-.roster-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
-.roster-chip{display:flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:5px 6px 5px 12px;font-size:13px;}
-.roster-chip input[type="number"]{width:64px;padding:3px 6px;text-align:right;border-radius:4px;}
-.roster-chip .del{background:none;border:none;color:var(--ink-soft);font-size:13px;padding:2px 6px;line-height:1;border-radius:999px;}
-.roster-chip .del:hover{color:var(--critical);background:var(--critical-soft);}
-.add-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
-.add-row input{width:150px;}
-.tabbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px;}
-.userchip{font-size:13px;color:var(--ink-soft);}
-.empty{color:var(--ink-soft);font-size:13px;padding:20px 10px;text-align:center;}
-.op-item-card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px;}
-.op-item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-weight:500;font-size:13px;gap:12px;flex-wrap:wrap;}
-.op-item-header label{display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink-soft);}
+.empty{color:var(--ink-soft);font-size:13px;padding:24px 10px;text-align:center;}
+.ledger-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:var(--paper-raised);border:1px solid var(--line);border-radius:12px;padding:20px;max-width:400px;width:100%;box-shadow:0 8px 24px var(--shadow);}
+.modal-box p{margin:0 0 14px;font-size:14px;line-height:1.5;}
+.modal-box input{width:100%;margin-bottom:14px;}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;}
+.toast-wrap{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:1001;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;}
+.toast{background:var(--ink);color:var(--paper);border-radius:8px;padding:10px 16px;font-size:13px;box-shadow:0 4px 16px var(--shadow);max-width:320px;text-align:center;}
 </style>
-</head>
-<body>
 
-<div id="loginView" class="center-wrap">
-  <p class="eyebrow">MJPRO Beauty</p>
-  <h1>团队提成系统登录</h1>
-  <div class="field">
-    <label for="loginName">姓名</label>
-    <select id="loginName"></select>
-  </div>
-  <div class="field">
-    <label for="loginPin">PIN 码（6位数字）</label>
-    <input type="password" id="loginPin" inputmode="numeric" maxlength="6" />
-  </div>
-  <button class="primary" id="loginBtn">登录</button>
-  <p class="error-text" id="loginError"></p>
-</div>
-
-<div id="appView" class="wrap" style="display:none;">
-  <div class="tabbar">
+<div class="wrap">
+  <header class="masthead">
     <div>
-      <p class="eyebrow">MJPRO Beauty</p>
-      <h1 id="pageTitle">我的提成</h1>
+      <p class="eyebrow">MJPRO Beauty · 内部提成台账</p>
+      <h1 id="monthTitle">2026年7月 提成结算</h1>
     </div>
-    <div style="display:flex;gap:10px;align-items:center;">
-      <span class="userchip" id="userChip"></span>
+    <div class="controls">
       <input type="month" id="monthPicker" />
-      <button id="logoutBtn">登出</button>
+      <button id="exportBtn"><i class="ti ti-download" aria-hidden="true"></i> 导出 Excel</button>
+      <button id="resetBtn"><i class="ti ti-refresh" aria-hidden="true"></i> 重置</button>
+    </div>
+  </header>
+
+  <div class="summary-strip" id="summaryStrip"></div>
+  <div class="tier-box" id="tierBox"></div>
+
+  <div class="roster-row">
+    <p class="section-title">团队人员名单（客服 / 业务员 / 服务师 / 推荐人 通用）</p>
+    <div class="roster-chips" id="rosterChips"></div>
+    <div class="add-roster">
+      <input type="text" id="newPersonName" placeholder="姓名" />
+      <button id="addPersonBtn">添加人员</button>
     </div>
   </div>
 
-  <div id="staffSection"></div>
-  <div id="adminSection" style="display:none;"></div>
+  <div class="roster-row">
+    <p class="section-title op-split-title">
+      <span>润颜术手工费（每次固定金额，按人设置）</span>
+      <label><input type="checkbox" id="split_facial" /> 与公司平分（50%）</label>
+    </p>
+    <div class="roster-chips" id="facialRateList"></div>
+  </div>
+
+  <div class="roster-row">
+    <p class="section-title op-split-title">
+      <span>睫毛手工费（每次固定金额，按人设置）</span>
+      <label><input type="checkbox" id="split_lash" /> 与公司平分（50%）</label>
+    </p>
+    <div class="roster-chips" id="lashRateList"></div>
+  </div>
+
+  <div class="roster-row">
+    <p class="section-title op-split-title">
+      <span>冰点手工费（每次固定金额，按人设置）</span>
+      <label><input type="checkbox" id="split_icepoint" /> 与公司平分（50%）</label>
+    </p>
+    <div class="roster-chips" id="icepointRateList"></div>
+  </div>
+
+  <div class="roster-row">
+    <p class="section-title">抗衰产品提成（仅限有提成的项目，例：298爆卡）</p>
+    <div class="roster-chips" id="antiAgingProductList"></div>
+    <div class="add-roster">
+      <input type="text" id="newProductName" placeholder="项目名称，例：298爆卡" />
+      <input type="number" id="newProductCommission" placeholder="提成 RM" style="width:110px;" />
+      <button id="addProductBtn">添加项目</button>
+    </div>
+  </div>
+
+  <div class="roster-row">
+    <p class="section-title">抗衰操作费项目（其他非提成项目，自定义名称，每项按人设置固定金额）</p>
+    <div id="antiagingOpItemsWrap"></div>
+    <div class="add-roster">
+      <input type="text" id="newOpItemName" placeholder="项目名称，例：黄金炮" />
+      <button id="addOpItemBtn">添加项目</button>
+    </div>
+  </div>
+
+  <div class="panel bulk-panel">
+    <h2>批量导入（粘贴团队消息）</h2>
+    <p class="hint" style="margin:0 0 10px;">直接把团队发来的整段消息粘贴进去，系统会按人名 + 分类（润 / 邀约 / 睫毛 / 冰点 / 抗衰）+ 客户 + 日期自动拆成记录草稿。就算分类写得不完整（比如「润颜术」只写「润」），或者某条信息不齐全，也会尽量抓出姓名和日期，其余的你可以在下面预览表格里再调整。</p>
+    <textarea id="bulkText" placeholder="安倪🙆🏼‍♀️&#10;&#10;润&#10;宋润芳 Soong Youn Foong 4/6&#10;&#10;邀约&#10;Celine Yeoh （成交388）10/6"></textarea>
+    <div class="bulk-actions">
+      <button id="bulkParseBtn">解析</button>
+      <button class="primary" id="bulkImportBtn" style="display:none;">确认导入全部</button>
+    </div>
+    <div id="bulkPreviewWrap" class="bulk-preview-table" style="display:none;">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>类型</th><th>人员</th><th>客户</th><th>日期</th><th>已成交</th><th>成交金额</th><th>抗衰项目</th><th>抗衰金额</th><th>备注</th><th></th></tr>
+          </thead>
+          <tbody id="bulkPreviewBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel bulk-panel">
+    <h2>结构化导入（从 Excel 粘贴）</h2>
+    <p class="hint" style="margin:0 0 10px;">按「MJPRO_提成记录表」模板填好后，把数据行整段复制（不用复制标题行），粘贴到下面，点「解析」看每行算出来的分成对不对，再一次性导入。</p>
+    <textarea id="xlsxText" placeholder="日期	姓名	类型	客户	金额(RM)	比例%	抗衰项目	来源	推荐人/技术总监	已成交	备注"></textarea>
+    <div class="bulk-actions">
+      <button id="xlsxParseBtn">解析</button>
+      <button class="primary" id="xlsxImportBtn" style="display:none;">确认导入全部</button>
+    </div>
+    <div id="xlsxPreviewWrap" class="bulk-preview-table" style="display:none;">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>行</th><th>日期</th><th>姓名</th><th>类型</th><th>客户</th><th>分成预览</th><th>状态</th></tr>
+          </thead>
+          <tbody id="xlsxPreviewBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="panel">
+      <h2>新增记录</h2>
+      <div class="type-tabs" id="typeTabs"></div>
+
+      <div class="field">
+        <label for="f_date">日期</label>
+        <input type="date" id="f_date" />
+      </div>
+
+      <div data-group="source">
+        <div class="field">
+          <label for="f_source">客户来源</label>
+          <select id="f_source">
+            <option value="self">自招客户（服务师 90% / 公司 10%）</option>
+            <option value="company">公司客源 / 广告 / 推荐（推荐人 30% / 公司 42% / 技术总监 28%）</option>
+          </select>
+        </div>
+      </div>
+
+      <div data-group="provider">
+        <div class="field">
+          <label for="f_provider">服务师</label>
+          <select id="f_provider"></select>
+        </div>
+      </div>
+
+      <div data-group="referrer">
+        <div class="field">
+          <label for="f_referrer">推荐人</label>
+          <select id="f_referrer"></select>
+        </div>
+        <div class="field">
+          <label for="f_director">技术总监 / Director</label>
+          <input type="text" id="f_director" placeholder="姓名" />
+        </div>
+      </div>
+
+      <div data-group="person">
+        <div class="field">
+          <label for="f_person" id="f_person_label">经办人</label>
+          <select id="f_person"></select>
+        </div>
+      </div>
+
+      <div data-group="client">
+        <div class="field">
+          <label for="f_client">客户名称</label>
+          <input type="text" id="f_client" placeholder="选填" />
+        </div>
+      </div>
+
+      <div data-group="product">
+        <div class="field">
+          <label for="f_product">抗衰项目</label>
+          <select id="f_product"></select>
+          <p class="hint">选好项目和经办人后，下面的金额会自动带出参考价，价格不一样的话直接改金额就行。</p>
+        </div>
+      </div>
+
+      <div data-group="closed">
+        <div class="field" style="flex-direction:row;align-items:center;gap:8px;">
+          <input type="checkbox" id="f_closed" style="width:auto;" />
+          <label for="f_closed" style="margin:0;">已成交（成功邀约至总部由老师面诊成交）</label>
+        </div>
+      </div>
+
+      <div data-group="amount">
+        <div class="field">
+          <label id="f_amount_label" for="f_amount">业绩金额 (RM)</label>
+          <input type="number" id="f_amount" min="0" step="0.01" placeholder="0.00" />
+          <p class="hint" id="f_amount_hint" style="display:none;"></p>
+        </div>
+      </div>
+
+      <div data-group="rate">
+        <div class="field">
+          <label for="f_rate">成交提成比例 (%)</label>
+          <input type="number" id="f_rate" min="1" max="5" step="0.5" value="3" />
+          <p class="hint">制度范围 1% - 5%，按实际成交情况填写。</p>
+        </div>
+      </div>
+
+      <div class="preview-commission" id="commissionPreview"></div>
+
+      <div class="field">
+        <label for="f_note">备注</label>
+        <input type="text" id="f_note" placeholder="选填" />
+      </div>
+      <div class="field">
+        <label for="f_status">状态</label>
+        <select id="f_status">
+          <option value="pending">待结算</option>
+          <option value="paid">已结算</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="primary" id="addRecordBtn" style="width:100%;">记录入账</button>
+        <button id="cancelEditBtn" style="display:none;white-space:nowrap;">取消编辑</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ledger-header">
+        <h2 style="margin:0;">本月明细</h2>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <button id="markPaidBtn" style="display:none;"><i class="ti ti-check" aria-hidden="true"></i> 标记已结算 (<span id="selectedCountPaid">0</span>)</button>
+          <button id="deleteSelectedBtn" style="display:none;"><i class="ti ti-trash" aria-hidden="true"></i> 删除所选 (<span id="selectedCount">0</span>)</button>
+          <select id="personFilter"><option value="">全部人员</option></select>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:28px;"><input type="checkbox" id="selectAllRecords" aria-label="全选" /></th>
+              <th>日期</th><th>类型</th><th>经办 / 分成</th><th>客户</th>
+              <th class="num">金额</th><th class="num">分成明细</th>
+              <th>状态</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="recordsBody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="emptyState" style="display:none;">本月还没有记录，从左侧添加第一笔吧。</div>
+    </div>
+  </div>
+
+  <div class="panel statement-panel">
+    <h2>个人结算讯息（生成后复制发给本人）</h2>
+    <p class="hint" style="margin:0 0 10px;">选人员生成当月的提成结算文字，复制后可以直接发到 WhatsApp，不用再一个个转告金额。数据只在这个页面本地生成，不会自动发送给任何人。</p>
+    <div class="statement-controls">
+      <select id="statementPerson"></select>
+      <button id="genStatementBtn">生成结算讯息</button>
+    </div>
+    <textarea id="statementOutput" readonly placeholder="点「生成结算讯息」查看内容"></textarea>
+    <div class="statement-actions">
+      <button class="primary" id="copyStatementBtn">复制文字</button>
+    </div>
+  </div>
 </div>
 
-<script src="app.js"></script>
-</body>
-</html>
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <p id="modalMessage"></p>
+    <input type="text" id="modalInput" style="display:none;" />
+    <div class="modal-actions">
+      <button id="modalCancel">取消</button>
+      <button class="primary" id="modalConfirm">确定</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="exportOverlay">
+  <div class="modal-box" style="max-width:640px;">
+    <p>点「下载文件」试试自动下载；如果没有反应，就点「复制文字」，然后打开 Excel 或 Google Sheets 粘贴（Ctrl+V / Cmd+V），会自动分好列。</p>
+    <textarea id="exportOutput" readonly style="width:100%;min-height:220px;font-family:var(--font-num);font-size:11.5px;line-height:1.5;margin-bottom:14px;"></textarea>
+    <div class="modal-actions">
+      <button id="exportCloseBtn">关闭</button>
+      <button id="exportDownloadBtn">下载文件</button>
+      <button class="primary" id="exportCopyBtn">复制文字</button>
+    </div>
+  </div>
+</div>
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+const LS_PEOPLE='cl_people_mjpro', LS_RECORDS='cl_records_mjpro', LS_ANTIAGING='cl_antiaging_mjpro', LS_ANTIAGING_OP='cl_antiaging_op_mjpro', LS_OP_SPLITS='cl_op_splits_mjpro';
+function load(key,fallback){try{const v=JSON.parse(localStorage.getItem(key));return v||fallback;}catch(e){return fallback;}}
+function save(key,val){localStorage.setItem(key,JSON.stringify(val));}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function stripEmoji(s){return s.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{200D}\u{FE0F}]/gu,'').trim();}
+
+function showToast(message){
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = message;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.remove(); }, 3000);
+}
+
+function showModal({message, needInput=false, expectedInput=null, confirmLabel='确定', onConfirm}){
+  const overlay = document.getElementById('modalOverlay');
+  const input = document.getElementById('modalInput');
+  document.getElementById('modalMessage').textContent = message;
+  input.style.display = needInput ? '' : 'none';
+  input.value = '';
+  document.getElementById('modalConfirm').textContent = confirmLabel;
+  overlay.classList.add('open');
+  if(needInput){ setTimeout(()=>input.focus(), 50); }
+
+  const confirmBtn = document.getElementById('modalConfirm');
+  const cancelBtn = document.getElementById('modalCancel');
+
+  function close(){
+    overlay.classList.remove('open');
+    confirmBtn.removeEventListener('click', onConfirmClick);
+    cancelBtn.removeEventListener('click', onCancelClick);
+    input.removeEventListener('keydown', onKeydown);
+  }
+  function onConfirmClick(){
+    if(needInput && input.value.trim()!==expectedInput){
+      close();
+      showToast('输入不符，已取消，数据没有变动。');
+      return;
+    }
+    close();
+    onConfirm && onConfirm();
+  }
+  function onCancelClick(){ close(); }
+  function onKeydown(e){ if(e.key==='Enter'){ onConfirmClick(); } else if(e.key==='Escape'){ onCancelClick(); } }
+
+  confirmBtn.addEventListener('click', onConfirmClick);
+  cancelBtn.addEventListener('click', onCancelClick);
+  input.addEventListener('keydown', onKeydown);
+}
+
+const OP_TYPES = [
+  {key:'facial',    field:'facialRate',    label:'润颜术', rateLabel:'润颜术手工费', listId:'facialRateList'},
+  {key:'lash',      field:'lashRate',      label:'睫毛',   rateLabel:'睫毛手工费',   listId:'lashRateList'},
+  {key:'icepoint',  field:'icepointRate',  label:'冰点',   rateLabel:'冰点手工费',   listId:'icepointRateList'}
+];
+function newPerson(name){
+  const obj = {name};
+  OP_TYPES.forEach(o=>{ obj[o.field] = 0; });
+  return obj;
+}
+
+let people = load(LS_PEOPLE, [])
+  .map(p=> typeof p==='string' ? newPerson(p) : p);
+let records = load(LS_RECORDS, []);
+let antiAgingProducts = load(LS_ANTIAGING, [{name:'298爆卡', commission:50}]);
+let antiagingOpItems = load(LS_ANTIAGING_OP, []).map(i=> i.rates ? i : {...i, rates:{}});
+let opTypeSplits = load(LS_OP_SPLITS, {});
+OP_TYPES.forEach(o=>{ if(!(o.key in opTypeSplits)) opTypeSplits[o.key] = false; });
+
+const fmt = n => 'RM ' + Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtPct = n => Number(n||0).toLocaleString('en-MY',{maximumFractionDigits:1}) + '%';
+
+const TYPES = {
+  invite:    { label:'邀约',                 groups:['person','client','closed'],         personLabel:'经办人' },
+  ...Object.fromEntries(OP_TYPES.map(o=>[o.key, { label:o.label, groups:['person','client'], personLabel:'操作人' }])),
+  antiaging: { label:'抗衰',                 groups:['person','client','product','amount'], personLabel:'经办人' },
+  freckle:   { label:'祛斑专场成交',         groups:['person','client','amount','rate'],  personLabel:'业务员' },
+  care:      { label:'润护理/产品套盒方案',  groups:['person','client','amount'],         personLabel:'业务员' },
+  review:    { label:'客户Review点评',       groups:['person','client','amount'],         personLabel:'经办人' },
+  tattoo:    { label:'纹绣服务',             groups:['source','client','amount'] }
+};
+const OP_TYPE_KEYS = OP_TYPES.map(o=>o.key);
+const BULK_TYPES = ['invite','facial','lash','icepoint','antiaging'];
+const CATEGORY_TYPE_MAP = [
+  ['抗衰','antiaging'],
+  ['睫毛','lash'],
+  ['冰点','icepoint'],
+  ['润颜术','facial'],
+  ['润','facial'],
+  ['邀约','invite']
+];
+
+const PERSONAL_AD_TIERS = [
+  {min:0, max:20000, rate:0.01},
+  {min:20000, max:80000, rate:0.03},
+  {min:80000, max:Infinity, rate:0.05}
+];
+function tierRate(amount, tiers){
+  for(const t of tiers){ if(amount>=t.min && amount<t.max) return t.rate; }
+  return tiers[tiers.length-1].rate;
+}
+
+let currentType = 'invite';
+
+const monthPicker = document.getElementById('monthPicker');
+const now = new Date();
+monthPicker.value = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+document.getElementById('f_date').value = now.toISOString().slice(0,10);
+
+const monthTitle = document.getElementById('monthTitle');
+function monthLabel(ym){ const [y,m]=ym.split('-'); return y+'年'+parseInt(m,10)+'月 提成结算'; }
+
+function currentMonthRecords(){
+  const ym = monthPicker.value;
+  return records.filter(r=>r.date.slice(0,7)===ym);
+}
+
+function renderTypeTabs(){
+  const wrap = document.getElementById('typeTabs');
+  wrap.innerHTML = Object.keys(TYPES).map(k=>
+    `<button type="button" data-type="${k}" class="${k===currentType?'active':''}">${TYPES[k].label}</button>`
+  ).join('');
+  wrap.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ currentType = btn.getAttribute('data-type'); renderTypeTabs(); applyFieldVisibility(); updateAntiagingAmountDefault(); });
+  });
+}
+
+function applyFieldVisibility(){
+  const cfg = TYPES[currentType];
+  const allGroups = ['source','provider','referrer','person','client','product','closed','amount','rate'];
+  allGroups.forEach(g=>{
+    const el = document.querySelector(`[data-group="${g}"]`);
+    if(!el) return;
+    let show = cfg.groups && cfg.groups.includes(g);
+    if(currentType==='tattoo'){
+      const src = document.getElementById('f_source').value;
+      if(g==='provider') show = src==='self';
+      if(g==='referrer') show = src==='company';
+    }
+    if(currentType==='invite' && g==='amount'){ show = document.getElementById('f_closed').checked; }
+    el.style.display = show ? '' : 'none';
+  });
+  if(cfg.personLabel){ document.getElementById('f_person_label').textContent = cfg.personLabel; }
+  const amountInput = document.getElementById('f_amount');
+  const amountHint = document.getElementById('f_amount_hint');
+  if(currentType==='review'){
+    document.getElementById('f_amount_label').textContent = '点评奖励金额 (RM)';
+    amountInput.min = 3; amountInput.max = 5; amountInput.step = 0.5;
+    amountHint.textContent = '制度范围 RM3 - RM5，按实际情况填写。';
+    amountHint.style.display = '';
+  } else if(currentType==='antiaging'){
+    document.getElementById('f_amount_label').textContent = '本次金额 (RM)';
+    amountInput.min = 0; amountInput.removeAttribute('max'); amountInput.step = 0.01;
+    amountHint.textContent = '已按项目/人员带出参考金额，价格不一样的话可以直接改这里，之后也能在明细里再调整。';
+    amountHint.style.display = '';
+  } else {
+    document.getElementById('f_amount_label').textContent = currentType==='care' ? '订单金额 (RM)' : (currentType==='tattoo' ? '服务金额 (RM)' : (currentType==='invite' ? '本次面诊成交业绩 (RM)' : '业绩金额 (RM)'));
+    amountInput.min = 0; amountInput.removeAttribute('max'); amountInput.step = 0.01;
+    amountHint.style.display = 'none';
+  }
+}
+
+function renderPeopleSelects(){
+  const opts = people.map(p=>`<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`).join('');
+  ['f_person','f_provider','f_referrer'].forEach(id=>{
+    const el = document.getElementById(id);
+    const prev = el.value;
+    el.innerHTML = opts;
+    if(people.some(p=>p.name===prev)) el.value = prev;
+  });
+  const filterSel = document.getElementById('personFilter');
+  const prevFilter = filterSel.value;
+  filterSel.innerHTML = '<option value="">全部人员</option>' + opts;
+  if(people.some(p=>p.name===prevFilter)) filterSel.value = prevFilter;
+
+  const stSel = document.getElementById('statementPerson');
+  const prevSt = stSel.value;
+  stSel.innerHTML = opts;
+  if(people.some(p=>p.name===prevSt)) stSel.value = prevSt;
+}
+
+function renderProductSelect(){
+  const sel = document.getElementById('f_product');
+  const prev = sel.value;
+  const opOpts = antiagingOpItems.map(i=>`<option value="opfee:${escapeHtml(i.name)}">${escapeHtml(i.name)}（操作费）</option>`).join('');
+  const productOpts = antiAgingProducts.map(p=>`<option value="product:${escapeHtml(p.name)}">${escapeHtml(p.name)}（RM${p.commission} 提成）</option>`).join('');
+  sel.innerHTML = opOpts + productOpts || '<option value="">先添加抗衰项目</option>';
+  const allVals = [...sel.options].map(o=>o.value);
+  if(prev && allVals.includes(prev)) sel.value = prev;
+}
+
+function renderRoster(){
+  const wrap = document.getElementById('rosterChips');
+  wrap.innerHTML = people.map(p=>`<span class="roster-chip">${escapeHtml(p.name)}<button class="del" data-del-person="${escapeHtml(p.name)}" aria-label="移除${escapeHtml(p.name)}">✕</button></span>`).join('')
+    || '<p class="empty" style="padding:6px 0;">还没有添加人员。</p>';
+  wrap.querySelectorAll('[data-del-person]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const name = btn.getAttribute('data-del-person');
+      people = people.filter(p=>p.name!==name);
+      save(LS_PEOPLE, people);
+      renderAll();
+    });
+  });
+}
+
+function renderOpRates(op){
+  const wrap = document.getElementById(op.listId);
+  wrap.innerHTML = people.map(p=>`
+    <span class="roster-chip">
+      ${escapeHtml(p.name)}
+      <input type="number" class="num" min="0" step="1" value="${p[op.field]||0}" data-op-rate="${escapeHtml(p.name)}" data-op-field="${op.field}" />
+    </span>`).join('') || '<p class="empty" style="padding:6px 0;">先在上方添加人员。</p>';
+  wrap.querySelectorAll('[data-op-rate]').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      const name = inp.getAttribute('data-op-rate');
+      const field = inp.getAttribute('data-op-field');
+      const person = people.find(p=>p.name===name);
+      if(person){ person[field] = Number(inp.value)||0; save(LS_PEOPLE, people); renderSummary(); renderRecords(); updatePreview(); }
+    });
+  });
+}
+
+function renderAntiAgingProducts(){
+  const wrap = document.getElementById('antiAgingProductList');
+  wrap.innerHTML = antiAgingProducts.map(p=>`
+    <span class="roster-chip">
+      ${escapeHtml(p.name)}
+      <input type="number" class="num" min="0" step="1" value="${p.commission||0}" data-product-rate="${escapeHtml(p.name)}" />
+      <button class="del" data-del-product="${escapeHtml(p.name)}" aria-label="移除${escapeHtml(p.name)}">✕</button>
+    </span>`).join('') || '<p class="empty" style="padding:6px 0;">还没有添加抗衰项目。</p>';
+  wrap.querySelectorAll('[data-product-rate]').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      const name = inp.getAttribute('data-product-rate');
+      const product = antiAgingProducts.find(p=>p.name===name);
+      if(product){ product.commission = Number(inp.value)||0; save(LS_ANTIAGING, antiAgingProducts); renderSummary(); renderRecords(); updatePreview(); }
+    });
+  });
+  wrap.querySelectorAll('[data-del-product]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const name = btn.getAttribute('data-del-product');
+      antiAgingProducts = antiAgingProducts.filter(p=>p.name!==name);
+      save(LS_ANTIAGING, antiAgingProducts);
+      renderAll();
+    });
+  });
+}
+
+function renderAntiagingOpItems(){
+  const wrap = document.getElementById('antiagingOpItemsWrap');
+  wrap.innerHTML = antiagingOpItems.map(item=>`
+    <div class="op-item-card">
+      <div class="op-item-header">
+        <span>${escapeHtml(item.name)}</span>
+        <span style="display:flex;align-items:center;gap:12px;">
+          <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink-soft);">
+            <input type="checkbox" style="width:auto;" data-split-opitem="${escapeHtml(item.name)}" ${item.split?'checked':''} /> 与公司平分（50%）
+          </label>
+          <button class="del" data-del-opitem="${escapeHtml(item.name)}" aria-label="删除${escapeHtml(item.name)}">✕</button>
+        </span>
+      </div>
+      <div class="roster-chips" style="margin-bottom:0;">
+        ${people.map(p=>`
+          <span class="roster-chip">
+            ${escapeHtml(p.name)}
+            <input type="number" class="num" min="0" step="1" value="${(item.rates && item.rates[p.name])||0}" data-opitem="${escapeHtml(item.name)}" data-opperson="${escapeHtml(p.name)}" />
+          </span>`).join('') || '<span class="empty" style="padding:0;">先在上方添加人员</span>'}
+      </div>
+    </div>`).join('') || '<p class="empty" style="padding:6px 0;">还没有操作费项目，添加一个吧，例：黄金炮。</p>';
+
+  wrap.querySelectorAll('[data-del-opitem]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const name = btn.getAttribute('data-del-opitem');
+      antiagingOpItems = antiagingOpItems.filter(i=>i.name!==name);
+      save(LS_ANTIAGING_OP, antiagingOpItems);
+      renderAll();
+    });
+  });
+  wrap.querySelectorAll('[data-split-opitem]').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      const name = cb.getAttribute('data-split-opitem');
+      const item = antiagingOpItems.find(i=>i.name===name);
+      if(item){
+        item.split = cb.checked;
+        save(LS_ANTIAGING_OP, antiagingOpItems);
+        renderSummary(); renderRecords(); updatePreview();
+      }
+    });
+  });
+  wrap.querySelectorAll('[data-opitem]').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      const itemName = inp.getAttribute('data-opitem');
+      const personName = inp.getAttribute('data-opperson');
+      const item = antiagingOpItems.find(i=>i.name===itemName);
+      if(item){
+        if(!item.rates) item.rates = {};
+        item.rates[personName] = Number(inp.value)||0;
+        save(LS_ANTIAGING_OP, antiagingOpItems);
+        renderSummary(); renderRecords(); updatePreview();
+      }
+    });
+  });
+}
+
+function personalAdTotals(monthRecs){
+  const totals = {};
+  monthRecs.filter(r=>r.type==='invite' && r.closed && Number(r.amount)>0).forEach(r=>{
+    totals[r.personId] = (totals[r.personId]||0) + Number(r.amount);
+  });
+  return totals;
+}
+
+function allocationsFor(record, adRateByPerson){
+  const amt = Number(record.amount)||0;
+  switch(record.type){
+    case 'invite': {
+      const allocs = [{who:record.personId, role:'邀约费 RM20', amount:20}];
+      if(record.closed && amt>0){
+        const rate = adRateByPerson[record.personId]||0;
+        allocs.push({who:record.personId, role:`面诊成交提成 ${fmtPct(rate*100)}（月度阶梯）`, amount: amt*rate});
+      }
+      return allocs;
+    }
+    case 'facial': case 'lash': case 'icepoint': {
+      const op = OP_TYPES.find(o=>o.key===record.type);
+      const person = people.find(p=>p.name===record.personId);
+      const fee = person ? Number(person[op.field])||0 : 0;
+      if(opTypeSplits[op.key]){
+        return [
+          {who:record.personId, role:`${op.rateLabel}（对半，本人）`, amount: fee/2},
+          {who:'公司', role:`${op.rateLabel}（对半，公司）`, amount: fee/2}
+        ];
+      }
+      return [{who:record.personId, role:op.rateLabel, amount: fee}];
+    }
+    case 'antiaging': {
+      const val = record.productName || '';
+      if(val.startsWith('opfee:')){
+        const itemName = val.slice(6);
+        const item = antiagingOpItems.find(i=>i.name===itemName);
+        if(item && item.split){
+          return [
+            {who:record.personId, role:`抗衰-${itemName}（对半，本人）`, amount: amt/2},
+            {who:'公司', role:`抗衰-${itemName}（对半，公司）`, amount: amt/2}
+          ];
+        }
+        return [{who:record.personId, role:`抗衰-${itemName}（操作费）`, amount: amt}];
+      }
+      const productName = val.startsWith('product:') ? val.slice(8) : val;
+      return [{who:record.personId, role: productName ? `抗衰-${productName} 提成` : '抗衰（未选项目）', amount: amt}];
+    }
+    case 'review': {
+      return [{who:record.personId, role:'Review点评奖励', amount: amt}];
+    }
+    case 'freckle': {
+      const rate = Number(record.rate)||0;
+      return [{who:record.personId, role:`祛斑成交提成 ${fmtPct(rate)}`, amount: amt*rate/100}];
+    }
+    case 'care': {
+      const eligible = amt>=1000;
+      return [{who:record.personId, role: eligible?'润护理/产品套盒成交费 5%':'润护理/产品套盒（未满RM1000，不计提成）', amount: eligible? amt*0.05:0}];
+    }
+    case 'tattoo': {
+      if(record.source==='self'){
+        return [
+          {who:record.providerId, role:'纹绣自招 90%', amount: amt*0.9},
+          {who:'公司', role:'公司抽成 10%', amount: amt*0.1}
+        ];
+      } else {
+        return [
+          {who:record.referrerId, role:'合作推荐费 30%', amount: amt*0.3},
+          {who:'公司', role:'公司抽成 42%', amount: amt*0.42},
+          {who:record.director||'技术总监', role:'技术总监 / Director 28%', amount: amt*0.28}
+        ];
+      }
+    }
+    default: return [];
+  }
+}
+
+function renderSummary(){
+  const monthRecs = currentMonthRecords();
+  const adRatesRaw = personalAdTotals(monthRecs);
+  const adRateByPerson = {};
+  Object.keys(adRatesRaw).forEach(p=>{ adRateByPerson[p] = tierRate(adRatesRaw[p], PERSONAL_AD_TIERS); });
+
+  const personTotals = {};
+  let companyTotal = 0;
+  let payoutTotal = 0;
+
+  monthRecs.forEach(r=>{
+    allocationsFor(r, adRateByPerson).forEach(a=>{
+      if(a.who==='公司'){ companyTotal += a.amount; }
+      else { personTotals[a.who] = (personTotals[a.who]||0) + a.amount; payoutTotal += a.amount; }
+    });
+  });
+
+  const strip = document.getElementById('summaryStrip');
+  strip.innerHTML = `
+    <div class="stat total"><p class="label">个人提成合计</p><p class="value num">${fmt(payoutTotal)}</p></div>
+    <div class="stat"><p class="label">公司抽成合计</p><p class="value num">${fmt(companyTotal)}</p></div>
+  `;
+
+  const tierBox = document.getElementById('tierBox');
+  tierBox.innerHTML = `
+    <span class="tier-item">邀约面诊成交提成阶梯（按个人当月成交业绩）：<span class="tier-rate">&lt;20k 1%</span> <span class="tier-rate">20k-80k 3%</span> <span class="tier-rate">&gt;80k 5%</span></span>
+  `;
+
+  renderPersonCards(personTotals);
+  window.__adRateByPerson = adRateByPerson;
+}
+
+function renderPersonCards(personTotals){
+  let wrap = document.getElementById('personCards');
+  if(!wrap){
+    wrap = document.createElement('div');
+    wrap.id = 'personCards';
+    wrap.className = 'roster-chips';
+    wrap.style.marginTop = '4px';
+    document.querySelector('.roster-row').insertBefore(wrap, document.getElementById('rosterChips').nextSibling);
+  }
+  const names = Array.from(new Set([...people.map(p=>p.name), ...Object.keys(personTotals)])).filter(n=>n && n!=='公司');
+  if(names.length===0 || Object.keys(personTotals).length===0){
+    wrap.innerHTML = '';
+    return;
+  }
+  wrap.innerHTML = names.filter(n=>personTotals[n]).map(n=>`
+    <span class="roster-chip" style="background:var(--accent-soft);border-color:var(--accent);">
+      ${escapeHtml(n)} <b class="num" style="margin-left:4px;">${fmt(personTotals[n])}</b>
+    </span>`).join('');
+}
+
+let selectedRecordIds = new Set();
+
+function updateDeleteSelectedUI(){
+  const count = selectedRecordIds.size;
+  const delBtn = document.getElementById('deleteSelectedBtn');
+  document.getElementById('selectedCount').textContent = count;
+  delBtn.style.display = count>0 ? '' : 'none';
+  const paidBtn = document.getElementById('markPaidBtn');
+  document.getElementById('selectedCountPaid').textContent = count;
+  paidBtn.style.display = count>0 ? '' : 'none';
+}
+
+function renderRecords(){
+  const ym = monthPicker.value;
+  const filterId = document.getElementById('personFilter').value;
+  let monthRecs = records.filter(r=>r.date.slice(0,7)===ym);
+  const adRateByPerson = window.__adRateByPerson || {};
+  if(filterId){
+    monthRecs = monthRecs.filter(r=> r.personId===filterId || r.providerId===filterId || r.referrerId===filterId || r.director===filterId);
+  }
+  monthRecs.sort((a,b)=> a.date < b.date ? 1 : -1);
+  const visibleIds = new Set(monthRecs.map(r=>r.id));
+  selectedRecordIds = new Set([...selectedRecordIds].filter(id=>visibleIds.has(id)));
+
+  const body = document.getElementById('recordsBody');
+  const empty = document.getElementById('emptyState');
+  const selectAll = document.getElementById('selectAllRecords');
+  if(monthRecs.length===0){ body.innerHTML=''; empty.style.display='block'; selectAll.checked=false; updateDeleteSelectedUI(); return; }
+  empty.style.display='none';
+
+  body.innerHTML = monthRecs.map(r=>{
+    const allocs = allocationsFor(r, adRateByPerson);
+    const total = allocs.reduce((s,a)=>s+a.amount,0);
+    const who = r.type==='tattoo' ? (r.source==='self'? r.providerId : r.referrerId) : r.personId;
+    const allocHtml = allocs.map(a=>`<div class="alloc-line">${escapeHtml(a.who)} · ${escapeHtml(a.role)}：<b>${fmt(a.amount)}</b></div>`).join('');
+    const amountDisplay = (OP_TYPE_KEYS.includes(r.type) || r.type==='antiaging') ? '—' : (r.type==='invite' ? (r.closed && r.amount ? fmt(r.amount) : '—') : fmt(r.amount));
+    const checked = selectedRecordIds.has(r.id) ? 'checked' : '';
+    return `<tr>
+      <td><input type="checkbox" class="row-select" data-id="${r.id}" ${checked} aria-label="选择这条记录" /></td>
+      <td class="num">${r.date}</td>
+      <td><span class="type-tag">${TYPES[r.type].label}</span></td>
+      <td>${escapeHtml(who||'—')}</td>
+      <td>${escapeHtml(r.client||'—')}${r.note?`<div style="color:var(--ink-soft);font-size:11px;">${escapeHtml(r.note)}</div>`:''}</td>
+      <td class="num">${amountDisplay}</td>
+      <td class="num" style="font-weight:600;">${allocHtml}<div style="margin-top:4px;">合计 ${fmt(total)}</div></td>
+      <td><button class="pill ${r.status==='paid'?'paid':'pending'}" data-toggle="${r.id}" style="border:none;">${r.status==='paid'?'已结算':'待结算'}</button></td>
+      <td><div class="row-actions"><button data-edit="${r.id}" aria-label="编辑记录"><i class="ti ti-edit" aria-hidden="true"></i></button><button data-del="${r.id}" aria-label="删除记录"><i class="ti ti-trash" aria-hidden="true"></i></button></div></td>
+    </tr>`;
+  }).join('');
+
+  selectAll.checked = monthRecs.length>0 && monthRecs.every(r=>selectedRecordIds.has(r.id));
+  updateDeleteSelectedUI();
+
+  body.querySelectorAll('.row-select').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      const id = cb.getAttribute('data-id');
+      if(cb.checked){ selectedRecordIds.add(id); } else { selectedRecordIds.delete(id); }
+      selectAll.checked = monthRecs.length>0 && monthRecs.every(r=>selectedRecordIds.has(r.id));
+      updateDeleteSelectedUI();
+    });
+  });
+  body.querySelectorAll('[data-toggle]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const rec = records.find(r=>r.id===btn.getAttribute('data-toggle'));
+      rec.status = rec.status==='paid' ? 'pending' : 'paid';
+      save(LS_RECORDS, records);
+      renderAll();
+    });
+  });
+  body.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.getAttribute('data-del');
+      showModal({ message:'删除这条记录？', confirmLabel:'删除', onConfirm: ()=>{
+        records = records.filter(r=>r.id!==id);
+        selectedRecordIds.delete(id);
+        save(LS_RECORDS, records);
+        renderAll();
+      }});
+    });
+  });
+  body.querySelectorAll('[data-edit]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      startEditRecord(btn.getAttribute('data-edit'));
+    });
+  });
+}
+
+let editingRecordId = null;
+
+function startEditRecord(id){
+  const rec = records.find(r=>r.id===id);
+  if(!rec) return;
+
+  currentType = rec.type;
+  renderTypeTabs();
+  applyFieldVisibility();
+
+  document.getElementById('f_date').value = rec.date || '';
+  document.getElementById('f_client').value = rec.client || '';
+  document.getElementById('f_note').value = rec.note || '';
+  document.getElementById('f_status').value = rec.status || 'pending';
+
+  if(rec.type==='invite'){
+    document.getElementById('f_person').value = rec.personId || '';
+    document.getElementById('f_closed').checked = !!rec.closed;
+    applyFieldVisibility();
+    if(rec.closed){ document.getElementById('f_amount').value = rec.amount || ''; }
+  } else if(OP_TYPE_KEYS.includes(rec.type)){
+    document.getElementById('f_person').value = rec.personId || '';
+  } else if(rec.type==='antiaging'){
+    document.getElementById('f_person').value = rec.personId || '';
+    document.getElementById('f_product').value = rec.productName || '';
+    document.getElementById('f_amount').value = rec.amount || '';
+  } else if(rec.type==='freckle'){
+    document.getElementById('f_person').value = rec.personId || '';
+    document.getElementById('f_amount').value = rec.amount || '';
+    document.getElementById('f_rate').value = rec.rate || '';
+  } else if(rec.type==='care' || rec.type==='review'){
+    document.getElementById('f_person').value = rec.personId || '';
+    document.getElementById('f_amount').value = rec.amount || '';
+  } else if(rec.type==='tattoo'){
+    document.getElementById('f_source').value = rec.source || 'self';
+    applyFieldVisibility();
+    if(rec.source==='self'){
+      document.getElementById('f_provider').value = rec.providerId || '';
+    } else {
+      document.getElementById('f_referrer').value = rec.referrerId || '';
+      document.getElementById('f_director').value = rec.director || '';
+    }
+    document.getElementById('f_amount').value = rec.amount || '';
+  }
+
+  editingRecordId = id;
+  document.getElementById('addRecordBtn').textContent = '更新记录';
+  document.getElementById('cancelEditBtn').style.display = '';
+  updatePreview();
+  document.querySelector('.layout .panel').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function exitEditMode(){
+  editingRecordId = null;
+  document.getElementById('addRecordBtn').textContent = '记录入账';
+  document.getElementById('cancelEditBtn').style.display = 'none';
+}
+
+document.getElementById('cancelEditBtn').addEventListener('click', ()=>{
+  exitEditMode();
+  document.getElementById('f_client').value='';
+  document.getElementById('f_amount').value='';
+  document.getElementById('f_note').value='';
+  document.getElementById('f_closed').checked=false;
+  document.getElementById('f_date').value = now.toISOString().slice(0,10);
+  applyFieldVisibility();
+  updatePreview();
+});
+
+function updatePreview(){
+  const box = document.getElementById('commissionPreview');
+  const amt = Number(document.getElementById('f_amount').value)||0;
+  const rate = Number(document.getElementById('f_rate').value)||0;
+  let lines = [];
+  if(currentType==='invite'){
+    lines.push({label:'邀约费（不论是否成交）', val: 20});
+    const closed = document.getElementById('f_closed').checked;
+    if(closed){
+      const personId = document.getElementById('f_person').value;
+      const ym = monthPicker.value;
+      const existing = records.filter(r=>r.type==='invite' && r.closed && r.personId===personId && r.date.slice(0,7)===ym)
+        .reduce((s,r)=>s+(Number(r.amount)||0), 0);
+      const tRate = tierRate(existing + amt, PERSONAL_AD_TIERS);
+      lines.push({label:`面诊成交提成 ${fmtPct(tRate*100)}（按本人当月累计业绩阶梯）`, val: amt*tRate});
+    }
+  } else if(OP_TYPE_KEYS.includes(currentType)){
+    const op = OP_TYPES.find(o=>o.key===currentType);
+    const personId = document.getElementById('f_person').value;
+    const person = people.find(p=>p.name===personId);
+    const fee = person ? Number(person[op.field])||0 : 0;
+    if(opTypeSplits[op.key]){
+      lines.push({label:`${op.rateLabel}（对半，本人）`, val: fee/2});
+      lines.push({label:`${op.rateLabel}（对半，公司）`, val: fee/2});
+    } else {
+      lines.push({label:op.rateLabel, val: fee});
+    }
+  } else if(currentType==='antiaging'){
+    const val = document.getElementById('f_product').value;
+    if(val.startsWith('opfee:')){
+      const itemName = val.slice(6);
+      const item = antiagingOpItems.find(i=>i.name===itemName);
+      if(item && item.split){
+        lines.push({label:`${itemName}（对半，本人）`, val: amt/2});
+        lines.push({label:`${itemName}（对半，公司）`, val: amt/2});
+      } else {
+        lines.push({label:`${itemName} 操作费`, val: amt});
+      }
+    } else {
+      const productName = val.startsWith('product:') ? val.slice(8) : val;
+      lines.push({label: productName ? `${productName} 提成` : '抗衰提成', val: amt});
+    }
+  } else if(currentType==='freckle'){
+    lines.push({label:`成交提成 ${fmtPct(rate)}`, val: amt*rate/100});
+  } else if(currentType==='care'){
+    const eligible = amt>=1000;
+    lines.push({label: eligible?'成交费 5%':'未满 RM1000，不计提成', val: eligible? amt*0.05:0});
+  } else if(currentType==='review'){
+    lines.push({label:'点评奖励', val: amt});
+  } else if(currentType==='tattoo'){
+    const src = document.getElementById('f_source').value;
+    if(src==='self'){
+      lines.push({label:'服务师 90%', val: amt*0.9});
+      lines.push({label:'公司抽成 10%', val: amt*0.1});
+    } else {
+      lines.push({label:'推荐人 30%', val: amt*0.3});
+      lines.push({label:'公司抽成 42%', val: amt*0.42});
+      lines.push({label:'技术总监 28%', val: amt*0.28});
+    }
+  }
+  box.innerHTML = lines.map(l=>`<div class="row"><span>${l.label}</span><span class="num">${l.val===null? (l.note||'—') : fmt(l.val)}</span></div>`).join('');
+}
+
+function renderAll(){
+  monthTitle.textContent = monthLabel(monthPicker.value);
+  renderPeopleSelects();
+  renderProductSelect();
+  renderRoster();
+  OP_TYPES.forEach(renderOpRates);
+  OP_TYPES.forEach(o=>{ const cb = document.getElementById('split_'+o.key); if(cb) cb.checked = !!opTypeSplits[o.key]; });
+  renderAntiagingOpItems();
+  renderAntiAgingProducts();
+  applyFieldVisibility();
+  renderSummary();
+  renderRecords();
+  updatePreview();
+}
+
+monthPicker.addEventListener('change', renderAll);
+document.getElementById('personFilter').addEventListener('change', renderRecords);
+document.getElementById('selectAllRecords').addEventListener('change', (e)=>{
+  document.querySelectorAll('.row-select').forEach(cb=>{
+    cb.checked = e.target.checked;
+    const id = cb.getAttribute('data-id');
+    if(e.target.checked){ selectedRecordIds.add(id); } else { selectedRecordIds.delete(id); }
+  });
+  updateDeleteSelectedUI();
+});
+document.getElementById('deleteSelectedBtn').addEventListener('click', ()=>{
+  const count = selectedRecordIds.size;
+  if(!count) return;
+  showModal({ message:`删除选中的 ${count} 条记录？此操作无法撤销。`, confirmLabel:'删除', onConfirm: ()=>{
+    records = records.filter(r=>!selectedRecordIds.has(r.id));
+    selectedRecordIds.clear();
+    save(LS_RECORDS, records);
+    renderAll();
+  }});
+});
+document.getElementById('markPaidBtn').addEventListener('click', ()=>{
+  const count = selectedRecordIds.size;
+  if(!count) return;
+  records.forEach(r=>{ if(selectedRecordIds.has(r.id)){ r.status='paid'; } });
+  selectedRecordIds.clear();
+  save(LS_RECORDS, records);
+  renderAll();
+  showToast(`已将 ${count} 条记录标记为已结算。`);
+});
+document.getElementById('f_source').addEventListener('change', ()=>{ applyFieldVisibility(); updatePreview(); });
+document.getElementById('f_closed').addEventListener('change', ()=>{ applyFieldVisibility(); updatePreview(); });
+function updateAntiagingAmountDefault(){
+  if(currentType==='antiaging'){
+    const val = document.getElementById('f_product').value;
+    const personId = document.getElementById('f_person').value;
+    let suggested = 0;
+    if(val.startsWith('opfee:')){
+      const itemName = val.slice(6);
+      const item = antiagingOpItems.find(i=>i.name===itemName);
+      suggested = item && item.rates ? Number(item.rates[personId])||0 : 0;
+    } else if(val.startsWith('product:')){
+      const productName = val.slice(8);
+      const product = antiAgingProducts.find(p=>p.name===productName);
+      suggested = product ? Number(product.commission)||0 : 0;
+    }
+    document.getElementById('f_amount').value = suggested || '';
+  }
+  updatePreview();
+}
+document.getElementById('f_person').addEventListener('change', updateAntiagingAmountDefault);
+document.getElementById('f_product').addEventListener('change', updateAntiagingAmountDefault);
+['f_amount','f_rate'].forEach(id=>document.getElementById(id).addEventListener('input', updatePreview));
+
+document.getElementById('addPersonBtn').addEventListener('click', ()=>{
+  const input = document.getElementById('newPersonName');
+  const name = input.value.trim();
+  if(!name) { input.focus(); return; }
+  if(!people.some(p=>p.name===name)) people.push(newPerson(name));
+  save(LS_PEOPLE, people);
+  input.value='';
+  renderAll();
+});
+
+document.getElementById('addProductBtn').addEventListener('click', ()=>{
+  const nameInput = document.getElementById('newProductName');
+  const commInput = document.getElementById('newProductCommission');
+  const name = nameInput.value.trim();
+  const commission = Number(commInput.value)||0;
+  if(!name){ nameInput.focus(); return; }
+  if(!antiAgingProducts.some(p=>p.name===name)) antiAgingProducts.push({name, commission});
+  save(LS_ANTIAGING, antiAgingProducts);
+  nameInput.value=''; commInput.value='';
+  renderAll();
+});
+
+OP_TYPES.forEach(o=>{
+  const cb = document.getElementById('split_'+o.key);
+  if(cb){
+    cb.addEventListener('change', ()=>{
+      opTypeSplits[o.key] = cb.checked;
+      save(LS_OP_SPLITS, opTypeSplits);
+      renderSummary(); renderRecords(); updatePreview();
+    });
+  }
+});
+
+document.getElementById('addOpItemBtn').addEventListener('click', ()=>{
+  const nameInput = document.getElementById('newOpItemName');
+  const name = nameInput.value.trim();
+  if(!name){ nameInput.focus(); return; }
+  if(!antiagingOpItems.some(i=>i.name===name)) antiagingOpItems.push({name, rates:{}, split:false});
+  save(LS_ANTIAGING_OP, antiagingOpItems);
+  nameInput.value='';
+  renderAll();
+});
+
+document.getElementById('addRecordBtn').addEventListener('click', ()=>{
+  const date = document.getElementById('f_date').value;
+  const client = document.getElementById('f_client').value.trim();
+  const note = document.getElementById('f_note').value.trim();
+  const status = document.getElementById('f_status').value;
+  if(!date){ showToast('请填写日期。'); return; }
+
+  const rec = { id: editingRecordId || uid(), type:currentType, date, client, note, status };
+
+  if(currentType==='invite'){
+    rec.personId = document.getElementById('f_person').value;
+    rec.closed = document.getElementById('f_closed').checked;
+    if(!rec.personId){ showToast('请选择经办人。'); return; }
+    if(rec.closed){
+      rec.amount = Number(document.getElementById('f_amount').value)||0;
+      if(!rec.amount){ showToast('已勾选「已成交」，请填写面诊成交业绩金额。'); return; }
+    }
+  } else if(OP_TYPE_KEYS.includes(currentType)){
+    rec.personId = document.getElementById('f_person').value;
+    if(!rec.personId){ showToast('请选择操作人。'); return; }
+  } else if(currentType==='antiaging'){
+    rec.personId = document.getElementById('f_person').value;
+    rec.productName = document.getElementById('f_product').value;
+    rec.amount = Number(document.getElementById('f_amount').value)||0;
+    if(!rec.personId || !rec.productName){ showToast('请选择经办人和抗衰项目。'); return; }
+    if(!rec.amount){ showToast('请填写本次金额。'); return; }
+  } else if(currentType==='freckle'){
+    rec.personId = document.getElementById('f_person').value;
+    rec.amount = Number(document.getElementById('f_amount').value)||0;
+    rec.rate = Number(document.getElementById('f_rate').value)||0;
+    if(!rec.personId || !rec.amount){ showToast('请选择业务员并填写业绩金额。'); return; }
+  } else if(currentType==='care'){
+    rec.personId = document.getElementById('f_person').value;
+    rec.amount = Number(document.getElementById('f_amount').value)||0;
+    if(!rec.personId || !rec.amount){ showToast('请选择业务员并填写订单金额。'); return; }
+  } else if(currentType==='review'){
+    rec.personId = document.getElementById('f_person').value;
+    rec.amount = Number(document.getElementById('f_amount').value)||0;
+    if(!rec.personId || !rec.amount){ showToast('请选择经办人并填写点评奖励金额。'); return; }
+  } else if(currentType==='tattoo'){
+    rec.source = document.getElementById('f_source').value;
+    rec.amount = Number(document.getElementById('f_amount').value)||0;
+    if(rec.source==='self'){
+      rec.providerId = document.getElementById('f_provider').value;
+      if(!rec.providerId || !rec.amount){ showToast('请选择服务师并填写服务金额。'); return; }
+    } else {
+      rec.referrerId = document.getElementById('f_referrer').value;
+      rec.director = document.getElementById('f_director').value.trim();
+      if(!rec.referrerId || !rec.amount){ showToast('请选择推荐人并填写服务金额。'); return; }
+    }
+  }
+
+  if(editingRecordId){
+    const idx = records.findIndex(r=>r.id===editingRecordId);
+    if(idx>=0){ records[idx] = rec; } else { records.push(rec); }
+  } else {
+    records.push(rec);
+  }
+  save(LS_RECORDS, records);
+
+  const wasEditing = !!editingRecordId;
+  exitEditMode();
+
+  document.getElementById('f_client').value='';
+  document.getElementById('f_amount').value='';
+  document.getElementById('f_note').value='';
+  document.getElementById('f_closed').checked=false;
+
+  const ym = date.slice(0,7);
+  if(monthPicker.value!==ym){ monthPicker.value=ym; }
+  renderAll();
+  if(wasEditing){ showToast('记录已更新。'); }
+});
+
+function isCategoryLine(line){
+  let core = line.replace(/[（(][^）)]*[）)]\s*$/,'').trim();
+  if(!core) return false;
+  if(/\d/.test(core)) return false;
+  const known = ['润颜术','润','邀约','祛斑','睫毛','冰点','抗衰','护理','纹绣','广告','面诊','点评','review','Review'];
+  const tokens = core.split(/\s+/).filter(Boolean);
+  if(!tokens.length) return false;
+  return tokens.every(t=> known.some(k=> t===k || t.includes(k)));
+}
+
+function categoryToType(category){
+  if(!category) return {type:'invite', matched:true};
+  for(const [kw,type] of CATEGORY_TYPE_MAP){
+    if(category.includes(kw)) return {type, matched:true};
+  }
+  return {type:'invite', matched:false};
+}
+
+function parseBulkText(text){
+  const rawLines = text.split(/\r?\n/);
+  let currentPerson=null, currentCategory=null;
+  const year = new Date().getFullYear();
+  const drafts=[];
+  let i=0;
+
+  function lineIsStaffHeader(line){
+    const stripped = stripEmoji(line);
+    return stripped !== line && !/\d/.test(stripped) && stripped.length>0 && stripped.length<=20;
+  }
+  function lineHasDate(line){
+    return /(\d{1,2})\s*\/\s*(\d{1,2})(?!\d)/.test(line);
+  }
+
+  while(i<rawLines.length){
+    const line = rawLines[i].trim();
+    if(!line){ i++; continue; }
+
+    if(isCategoryLine(line)){
+      currentCategory = line;
+      i++; continue;
+    }
+    if(lineIsStaffHeader(line)){
+      currentPerson = stripEmoji(line);
+      i++; continue;
+    }
+
+    const dateMatch = line.match(/(\d{1,2})\s*\/\s*(\d{1,2})(?!\d)/);
+    let date=null, rest=line;
+    if(dateMatch){
+      const day=dateMatch[1].padStart(2,'0'), month=dateMatch[2].padStart(2,'0');
+      date = `${year}-${month}-${day}`;
+      rest = (line.slice(0, dateMatch.index) + ' ' + line.slice(dateMatch.index+dateMatch[0].length)).trim();
+    }
+    const notesArr=[];
+    rest = rest.replace(/[（(]([^）)]*)[）)]/g, (m, inner, offset)=>{
+      if(offset===0) return m;
+      notesArr.push(inner.trim());
+      return '';
+    }).replace(/\s+/g,' ').trim();
+
+    i++;
+    const continuationLines=[];
+    while(i<rawLines.length){
+      const nl = rawLines[i].trim();
+      if(!nl){ i++; break; }
+      if(isCategoryLine(nl)) break;
+      if(lineIsStaffHeader(nl)) break;
+      if(lineHasDate(nl)) break;
+      continuationLines.push(nl);
+      i++;
+    }
+
+    if(!rest && notesArr.length===0 && continuationLines.length===0) continue;
+
+    const {type:guessedType, matched} = categoryToType(currentCategory);
+    let note = notesArr.join('；');
+    let product = null, dealAmount = null;
+
+    if(continuationLines.length){
+      const contText = continuationLines.join('；');
+      note = note ? `${note}；${contText}` : contText;
+      if(guessedType==='antiaging'){
+        const knownProduct = antiAgingProducts.find(p=> contText.includes(p.name));
+        const knownOpItem = antiagingOpItems.find(i=> contText.includes(i.name));
+        if(knownProduct) product = `product:${knownProduct.name}`;
+        else if(knownOpItem) product = `opfee:${knownOpItem.name}`;
+        else product = '';
+      }
+    } else if(guessedType==='antiaging'){
+      product = '';
+    }
+    const dealMatch = note.match(/成交\s*([\d,.]+)/);
+    if(dealMatch) dealAmount = Number(dealMatch[1].replace(/,/g,''));
+
+    let antiagingAmount = null;
+    if(guessedType==='antiaging'){
+      let amtMatch = note.match(/[=＝]\s*RM?\s*([\d,.]+)/i);
+      if(!amtMatch) amtMatch = note.match(/(?:共|合计|总共)\s*RM?\s*([\d,.]+)/i);
+      if(!amtMatch) amtMatch = note.match(/RM\s*([\d,.]+)/i);
+      if(amtMatch) antiagingAmount = Number(amtMatch[1].replace(/,/g,''));
+    }
+
+    if(!matched && currentCategory){
+      note = note ? `[${currentCategory}] ${note}` : `[${currentCategory}]`;
+    }
+
+    drafts.push({ tempId:uid(), person:currentPerson, category:currentCategory, guessedType, client:rest, date, note, product, dealAmount, amount:antiagingAmount });
+  }
+  return drafts;
+}
+
+function renderBulkPreview(drafts){
+  const wrap = document.getElementById('bulkPreviewWrap');
+  const body = document.getElementById('bulkPreviewBody');
+  const importBtn = document.getElementById('bulkImportBtn');
+  if(!drafts.length){ wrap.style.display='none'; importBtn.style.display='none'; return; }
+  wrap.style.display='';
+  importBtn.style.display='';
+  body.innerHTML = drafts.map(d=>{
+    const guessedType = BULK_TYPES.includes(d.guessedType) ? d.guessedType : 'invite';
+    const personOptsList = people.some(p=>p.name===d.person) || !d.person ? people : [{name:d.person}, ...people];
+    const personOpts = personOptsList.map(p=>`<option value="${escapeHtml(p.name)}" ${p.name===d.person?'selected':''}>${escapeHtml(p.name)}</option>`).join('');
+    const typeOpts = BULK_TYPES.map(k=>`<option value="${k}" ${k===guessedType?'selected':''}>${TYPES[k].label}</option>`).join('');
+    const isInvite = guessedType==='invite';
+    const isAntiaging = guessedType==='antiaging';
+    const hasDeal = isInvite && d.dealAmount;
+    const opItemOpts = antiagingOpItems.map(i=>`<option value="opfee:${escapeHtml(i.name)}" ${('opfee:'+i.name)===d.product?'selected':''}>${escapeHtml(i.name)}（操作费）</option>`).join('');
+    const productOpts = opItemOpts + antiAgingProducts.map(p=>`<option value="product:${escapeHtml(p.name)}" ${('product:'+p.name)===d.product?'selected':''}>${escapeHtml(p.name)}（RM${p.commission} 提成）</option>`).join('');
+    const flag = d.note && /(完成)/.test(d.note) && !hasDeal ? '<div class="warn-flag">备注含「完成」，请确认是否需要补成交金额</div>' : '';
+    return `<tr>
+      <td><select class="bp-type">${typeOpts}</select></td>
+      <td><select class="bp-person">${personOpts}</select></td>
+      <td><input type="text" class="bp-client" value="${escapeHtml(d.client)}" /></td>
+      <td><input type="date" class="bp-date" value="${d.date||''}" /></td>
+      <td style="text-align:center;"><input type="checkbox" class="bp-closed" ${hasDeal?'checked':''} ${isInvite?'':'disabled'} /></td>
+      <td><input type="number" class="bp-dealamount" min="0" step="0.01" value="${hasDeal?d.dealAmount:''}" style="width:90px;" ${isInvite?'':'disabled'} /></td>
+      <td><select class="bp-product" ${isAntiaging?'':'disabled'}>${productOpts}</select></td>
+      <td><input type="number" class="bp-amount" min="0" step="0.01" value="${d.amount||''}" style="width:90px;" ${isAntiaging?'':'disabled'} /></td>
+      <td><input type="text" class="bp-note" value="${escapeHtml(d.note||'')}" />${flag}</td>
+      <td><button class="bp-del" aria-label="移除此行">✕</button></td>
+    </tr>`;
+  }).join('');
+  body.querySelectorAll('.bp-del').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      btn.closest('tr').remove();
+      if(!body.querySelectorAll('tr').length){ wrap.style.display='none'; importBtn.style.display='none'; }
+    });
+  });
+  body.querySelectorAll('.bp-type').forEach(sel=>{
+    sel.addEventListener('change', ()=>{
+      const tr = sel.closest('tr');
+      const isInvite = sel.value==='invite';
+      const isAntiaging = sel.value==='antiaging';
+      tr.querySelector('.bp-closed').disabled = !isInvite;
+      tr.querySelector('.bp-dealamount').disabled = !isInvite;
+      tr.querySelector('.bp-product').disabled = !isAntiaging;
+      tr.querySelector('.bp-amount').disabled = !isAntiaging;
+      if(!isInvite){ tr.querySelector('.bp-closed').checked = false; }
+    });
+  });
+}
+
+document.getElementById('bulkParseBtn').addEventListener('click', ()=>{
+  const text = document.getElementById('bulkText').value;
+  const drafts = parseBulkText(text);
+  if(!drafts.length){ showToast('没有解析到有效记录，请检查格式（人员行、分类行、客户+日期行）。'); return; }
+  renderBulkPreview(drafts);
+});
+
+document.getElementById('bulkImportBtn').addEventListener('click', ()=>{
+  const rows = document.querySelectorAll('#bulkPreviewBody tr');
+  let imported=0, skipped=0, skippedAntiaging=0, firstDate=null;
+  rows.forEach(tr=>{
+    const type = tr.querySelector('.bp-type').value;
+    const personName = tr.querySelector('.bp-person').value.trim();
+    const client = tr.querySelector('.bp-client').value.trim();
+    const date = tr.querySelector('.bp-date').value;
+    const note = tr.querySelector('.bp-note').value.trim();
+    if(!date || !personName){ skipped++; return; }
+    if(type==='antiaging'){
+      const productVal = tr.querySelector('.bp-product').value;
+      const amountVal = Number(tr.querySelector('.bp-amount').value)||0;
+      if(!productVal || !amountVal){ skippedAntiaging++; return; }
+    }
+    if(!people.some(p=>p.name===personName)){ people.push(newPerson(personName)); }
+    const rec = { id:uid(), type, date, personId:personName, client, note, status:'pending' };
+    if(type==='invite'){
+      rec.closed = tr.querySelector('.bp-closed').checked;
+      rec.amount = rec.closed ? (Number(tr.querySelector('.bp-dealamount').value)||0) : 0;
+    } else if(type==='antiaging'){
+      rec.productName = tr.querySelector('.bp-product').value;
+      rec.amount = Number(tr.querySelector('.bp-amount').value)||0;
+    }
+    records.push(rec);
+    if(!firstDate) firstDate = date;
+    imported++;
+  });
+  if(imported===0){ showToast('没有可导入的记录（每行需要日期和人员，抗衰还需要项目和金额）。'); return; }
+  save(LS_PEOPLE, people);
+  save(LS_RECORDS, records);
+  document.getElementById('bulkPreviewWrap').style.display='none';
+  document.getElementById('bulkImportBtn').style.display='none';
+  document.getElementById('bulkText').value='';
+  if(firstDate){ monthPicker.value = firstDate.slice(0,7); }
+  renderAll();
+  const skipParts = [];
+  if(skipped) skipParts.push(`${skipped} 条缺日期/人员`);
+  if(skippedAntiaging) skipParts.push(`${skippedAntiaging} 条抗衰缺项目/金额`);
+  showToast(`已导入 ${imported} 条记录${skipParts.length?`，跳过 ${skipParts.join('、')}`:''}。`);
+});
+
+const XLSX_TYPE_MAP = {
+  '邀约':'invite', '润颜术':'facial', '睫毛':'lash', '冰点':'icepoint',
+  '抗衰':'antiaging', '祛斑专场成交':'freckle', '护理套盒':'care',
+  'Review点评':'review', '纹绣':'tattoo'
+};
+
+function parseXlsxDate(s){
+  s = (s||'').trim();
+  if(!s) return null;
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if(m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  m = s.match(/^(\d{1,2})\/(\d{1,2})$/);
+  if(m) return `${new Date().getFullYear()}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  return null;
+}
+
+function buildDraftFromXlsxRow(cols){
+  const [dateRaw, person, typeLabel, client, amountRaw, rateRaw, productLabel, sourceRaw, directorRaw, closedRaw, note] = cols;
+  const date = parseXlsxDate(dateRaw);
+  const type = XLSX_TYPE_MAP[(typeLabel||'').trim()];
+  if(!date) return {ok:false, error:'日期格式看不懂（要 D/M 或 YYYY-MM-DD）', row:cols};
+  if(!type) return {ok:false, error:`类型「${typeLabel||''}」认不出`, row:cols};
+  if(!(person||'').trim()) return {ok:false, error:'缺姓名', row:cols};
+
+  const rec = { id:uid(), type, date, personId:person.trim(), client:(client||'').trim(), note:(note||'').trim(), status:'pending' };
+
+  if(type==='invite'){
+    rec.closed = (closedRaw||'').trim()==='是';
+    rec.amount = rec.closed ? (Number(amountRaw)||0) : 0;
+    if(rec.closed && !rec.amount) return {ok:false, error:'已成交但没填金额', row:cols};
+  } else if(type==='antiaging'){
+    const label = (productLabel||'').trim();
+    if(!label) return {ok:false, error:'缺抗衰项目名称', row:cols};
+    const prod = antiAgingProducts.find(p=>p.name===label);
+    const opItem = antiagingOpItems.find(i=>i.name===label);
+    if(prod) rec.productName = `product:${prod.name}`;
+    else if(opItem) rec.productName = `opfee:${opItem.name}`;
+    else return {ok:false, error:`抗衰项目「${label}」在网站上还没有设置，先去上面加`, row:cols};
+    rec.amount = Number(amountRaw)||0;
+    if(!rec.amount) return {ok:false, error:'缺金额', row:cols};
+  } else if(type==='freckle'){
+    rec.amount = Number(amountRaw)||0;
+    rec.rate = Number(rateRaw)||0;
+    if(!rec.amount || !rec.rate) return {ok:false, error:'缺金额或比例', row:cols};
+  } else if(type==='care' || type==='review'){
+    rec.amount = Number(amountRaw)||0;
+    if(!rec.amount) return {ok:false, error:'缺金额', row:cols};
+  } else if(type==='tattoo'){
+    const src = (sourceRaw||'').trim();
+    rec.source = src==='公司客源' ? 'company' : 'self';
+    rec.amount = Number(amountRaw)||0;
+    if(!rec.amount) return {ok:false, error:'缺金额', row:cols};
+    if(rec.source==='self'){ rec.providerId = rec.personId; }
+    else { rec.referrerId = rec.personId; rec.director = (directorRaw||'').trim(); }
+  }
+  return {ok:true, rec};
+}
+
+function renderXlsxPreview(rows){
+  const wrap = document.getElementById('xlsxPreviewWrap');
+  const body = document.getElementById('xlsxPreviewBody');
+  const importBtn = document.getElementById('xlsxImportBtn');
+  if(!rows.length){ wrap.style.display='none'; importBtn.style.display='none'; return; }
+  wrap.style.display=''; importBtn.style.display='';
+  const adRateByPerson = window.__adRateByPerson || {};
+  window.__xlsxDrafts = rows.map(cols=>buildDraftFromXlsxRow(cols));
+  body.innerHTML = window.__xlsxDrafts.map((d,i)=>{
+    if(!d.ok){
+      return `<tr><td class="num">${i+1}</td><td colspan="4" style="color:var(--critical);">${escapeHtml(d.row.join(' | '))}</td><td colspan="2" style="color:var(--critical);">${escapeHtml(d.error)}</td></tr>`;
+    }
+    const r = d.rec;
+    const allocs = allocationsFor(r, adRateByPerson);
+    const total = allocs.reduce((s,a)=>s+a.amount,0);
+    const allocText = allocs.map(a=>`${escapeHtml(a.who)} ${fmt(a.amount)}`).join('；');
+    return `<tr>
+      <td class="num">${i+1}</td>
+      <td class="num">${r.date}</td>
+      <td>${escapeHtml(r.personId)}</td>
+      <td>${TYPES[r.type].label}</td>
+      <td>${escapeHtml(r.client||'—')}</td>
+      <td class="num">${allocText}<div style="margin-top:2px;">合计 ${fmt(total)}</div></td>
+      <td><span class="pill paid">OK</span></td>
+    </tr>`;
+  }).join('');
+}
+
+document.getElementById('xlsxParseBtn').addEventListener('click', ()=>{
+  const text = document.getElementById('xlsxText').value;
+  const lines = text.split(/\r?\n/).filter(l=>l.trim().length);
+  const rows = [];
+  lines.forEach(line=>{
+    const cols = line.split('\t').map(c=>c.trim());
+    if(cols[0]==='日期' && cols[2]==='类型') return;
+    rows.push(cols);
+  });
+  if(!rows.length){ showToast('没有解析到数据，确认是从 Excel 整行复制粘贴过来的。'); return; }
+  renderXlsxPreview(rows);
+});
+
+document.getElementById('xlsxImportBtn').addEventListener('click', ()=>{
+  const drafts = window.__xlsxDrafts || [];
+  let imported=0, failed=0, firstDate=null;
+  drafts.forEach(d=>{
+    if(!d.ok){ failed++; return; }
+    const r = d.rec;
+    if(!people.some(p=>p.name===r.personId)) people.push(newPerson(r.personId));
+    records.push(r);
+    if(!firstDate) firstDate = r.date;
+    imported++;
+  });
+  if(imported===0){ showToast('没有可导入的记录，请修正上面标红的行再重新粘贴。'); return; }
+  save(LS_PEOPLE, people);
+  save(LS_RECORDS, records);
+  document.getElementById('xlsxPreviewWrap').style.display='none';
+  document.getElementById('xlsxImportBtn').style.display='none';
+  document.getElementById('xlsxText').value='';
+  if(firstDate){ monthPicker.value = firstDate.slice(0,7); }
+  renderAll();
+  showToast(`已导入 ${imported} 条记录${failed?`，${failed} 条格式有问题没有导入`:''}。`);
+});
+
+function buildExportRows(){
+  const ym = monthPicker.value;
+  const filterId = document.getElementById('personFilter').value;
+  let monthRecs = records.filter(r=>r.date.slice(0,7)===ym).sort((a,b)=>a.date<b.date?-1:1);
+  if(filterId){
+    monthRecs = monthRecs.filter(r=> r.personId===filterId || r.providerId===filterId || r.referrerId===filterId || r.director===filterId);
+  }
+  const adRateByPerson = window.__adRateByPerson || {};
+  const header = ['日期','类型','客户','金额(RM)','分成方','分成说明','分成金额(RM)','状态','备注'];
+  const rows = [];
+  monthRecs.forEach(r=>{
+    const allocs = allocationsFor(r, adRateByPerson);
+    const amountCell = (OP_TYPE_KEYS.includes(r.type) || r.type==='antiaging') ? '' : (r.type==='invite' ? (r.closed && r.amount ? r.amount : '') : r.amount);
+    allocs.forEach(a=>{
+      if(filterId && a.who!==filterId) return;
+      rows.push([r.date, TYPES[r.type].label, r.client||'', amountCell, a.who, a.role, a.amount.toFixed(2), r.status==='paid'?'已结算':'待结算', r.note||'']);
+    });
+  });
+  return {ym, filterId, header, rows};
+}
+
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const {ym, filterId, header, rows} = buildExportRows();
+  window.__lastExport = {ym, filterId, header, rows};
+  const tsv = [header, ...rows].map(row=>row.map(cell=>String(cell).replace(/[\t\r\n]/g,' ')).join('\t')).join('\n');
+  document.getElementById('exportOutput').value = tsv;
+  document.getElementById('exportOverlay').classList.add('open');
+});
+
+document.getElementById('exportCloseBtn').addEventListener('click', ()=>{
+  document.getElementById('exportOverlay').classList.remove('open');
+});
+
+document.getElementById('exportDownloadBtn').addEventListener('click', ()=>{
+  const data = window.__lastExport;
+  if(!data) return;
+  const csv = [data.header, ...data.rows].map(row=>row.map(cell=>{
+    const s = String(cell);
+    return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }).join(',')).join('\r\n');
+  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = data.filterId ? `MJPRO提成记录_${data.ym}_${data.filterId}.csv` : `MJPRO提成记录_${data.ym}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('如果没有出现下载，改用「复制文字」再粘贴到 Excel。');
+});
+
+document.getElementById('exportCopyBtn').addEventListener('click', async ()=>{
+  const out = document.getElementById('exportOutput');
+  const btn = document.getElementById('exportCopyBtn');
+  try{
+    await navigator.clipboard.writeText(out.value);
+  }catch(e){
+    out.removeAttribute('readonly');
+    out.select();
+    document.execCommand('copy');
+    out.setAttribute('readonly','readonly');
+  }
+  const old = btn.textContent;
+  btn.textContent = '已复制';
+  setTimeout(()=>{ btn.textContent = old; }, 1500);
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  showModal({
+    message:'这会清空所有团队人员名单和全部提成记录，且无法恢复。确定要重置吗？',
+    confirmLabel:'重置',
+    onConfirm: ()=>{
+      people = [];
+      records = [];
+      antiAgingProducts = [{name:'298爆卡', commission:50}];
+      antiagingOpItems = [];
+      OP_TYPES.forEach(o=>{ opTypeSplits[o.key] = false; });
+      selectedRecordIds.clear();
+      localStorage.removeItem(LS_PEOPLE);
+      localStorage.removeItem(LS_RECORDS);
+      save(LS_ANTIAGING, antiAgingProducts);
+      save(LS_ANTIAGING_OP, antiagingOpItems);
+      save(LS_OP_SPLITS, opTypeSplits);
+      document.getElementById('bulkText').value='';
+      document.getElementById('bulkPreviewWrap').style.display='none';
+      document.getElementById('bulkImportBtn').style.display='none';
+      document.getElementById('statementOutput').value='';
+      renderAll();
+      showToast('已重置，所有人员和记录都已清空。');
+    }
+  });
+});
+
+function buildStatementText(personName){
+  const ym = monthPicker.value;
+  const adRateByPerson = window.__adRateByPerson || {};
+  const monthRecs = records.filter(r=>r.date.slice(0,7)===ym);
+  const byType = {};
+  let total = 0, paidCount = 0, pendingCount = 0;
+  monthRecs.forEach(r=>{
+    const allocs = allocationsFor(r, adRateByPerson).filter(a=>a.who===personName);
+    if(!allocs.length) return;
+    const recordAmount = allocs.reduce((s,a)=>s+a.amount, 0);
+    total += recordAmount;
+    if(r.status==='paid') paidCount++; else pendingCount++;
+    (byType[r.type] = byType[r.type]||[]).push({r, amount:recordAmount});
+  });
+  if(total===0 && paidCount===0 && pendingCount===0) return null;
+
+  const [y,m] = ym.split('-');
+  const lines = [`【MJPRO 提成结算】${personName} · ${y}年${parseInt(m,10)}月`, ''];
+  Object.keys(byType).forEach(t=>{
+    const items = byType[t].sort((x,y2)=> x.r.date < y2.r.date ? -1 : 1);
+    lines.push(`${TYPES[t].label} × ${items.length}`);
+    items.forEach(({r,amount})=>{
+      const dateShort = `${r.date.slice(8,10)}/${r.date.slice(5,7)}`;
+      const clientPart = r.client ? ` ${r.client}` : '';
+      const paidTag = r.status==='paid' ? '（已结算）' : '';
+      const dealTag = (r.type==='invite' && r.closed) ? '（已成交）' : '';
+      lines.push(`- ${dateShort}${clientPart}${dealTag}：${fmt(amount)}${paidTag}`);
+    });
+    lines.push('');
+  });
+  lines.push(`本月合计：${fmt(total)}`);
+  if(pendingCount>0){ lines.push(`（其中 ${pendingCount} 笔待结算，${paidCount} 笔已结算）`); }
+  return lines.join('\n');
+}
+
+document.getElementById('genStatementBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('statementPerson').value;
+  const out = document.getElementById('statementOutput');
+  if(!name){ showToast('请先添加人员。'); return; }
+  const text = buildStatementText(name);
+  if(!text){ out.value=''; showToast(`${name} 本月还没有任何记录。`); return; }
+  out.value = text;
+});
+
+document.getElementById('copyStatementBtn').addEventListener('click', async ()=>{
+  const out = document.getElementById('statementOutput');
+  if(!out.value){ showToast('请先生成结算讯息。'); return; }
+  const btn = document.getElementById('copyStatementBtn');
+  try{
+    await navigator.clipboard.writeText(out.value);
+  }catch(e){
+    out.removeAttribute('readonly');
+    out.select();
+    document.execCommand('copy');
+    out.setAttribute('readonly','readonly');
+  }
+  const old = btn.textContent;
+  btn.textContent = '已复制';
+  setTimeout(()=>{ btn.textContent = old; }, 1500);
+});
+
+renderTypeTabs();
+renderAll();
+</script>
