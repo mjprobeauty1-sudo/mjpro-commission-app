@@ -570,8 +570,13 @@ async function addPerson(){
   const pin = pinInput.value.trim();
   if(!name || !/^\d{6}$/.test(pin)){ errEl.textContent = '请填写姓名，PIN 需要是6位数字。'; return; }
   const email = `u-${uid()}@mjpro.internal`;
+  const { data: adminSessionData } = await sb.auth.getSession();
+  const adminSession = adminSessionData.session;
   const { data: signData, error: signErr } = await sb.auth.signUp({ email, password: pin });
   if(signErr || !signData.user){ errEl.textContent = '创建登录账号失败：'+(signErr?signErr.message:'未知错误'); return; }
+  if(adminSession){
+    await sb.auth.setSession({ access_token: adminSession.access_token, refresh_token: adminSession.refresh_token });
+  }
   const { error: profErr } = await sb.from('profiles').insert({ id:signData.user.id, name, email, role:roleSel.value });
   if(profErr){ errEl.textContent = '创建人员资料失败：'+profErr.message; return; }
   nameInput.value=''; pinInput.value='';
