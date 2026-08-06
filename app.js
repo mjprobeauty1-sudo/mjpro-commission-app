@@ -152,6 +152,15 @@ document.getElementById('logoutBtn').addEventListener('click', async ()=>{
   location.reload();
 });
 
+document.getElementById('changePinBtn').addEventListener('click', async ()=>{
+  const newPin = prompt('输入新的 6 位数字 PIN：');
+  if(newPin===null) return;
+  if(!/^\d{6}$/.test(newPin)){ alert('PIN 必须是 6 位数字。'); return; }
+  const { error } = await sb.auth.updateUser({ password: newPin });
+  if(error){ alert('修改失败：'+error.message); return; }
+  alert('PIN 修改成功，下次登录请用这个新的 PIN。');
+});
+
 // ---------------- Boot ----------------
 async function bootApp(){
   const { data: sess } = await sb.auth.getSession();
