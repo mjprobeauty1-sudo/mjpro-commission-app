@@ -16,7 +16,7 @@ const TYPES = {
   invite:  { label:'邀约',                 groups:['client','closed'] },
   ...Object.fromEntries(OP_TYPES.map(o=>[o.key, { label:o.label, groups:['client'] }])),
   antiaging:{ label:'抗衰',                groups:['client','product','amount'] },
-  care:    { label:'润护理/产品套盒方案',  groups:['client','amount'] },
+  care:    { label:'润颜术VIP套餐',  groups:['client','amount'] },
   review:  { label:'客户Review点评',       groups:['client','amount'] },
   tattoo:  { label:'纹绣服务',             groups:['source','client','amount'] }
 };
