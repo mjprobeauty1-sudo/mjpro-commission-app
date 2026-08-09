@@ -49,8 +49,8 @@ const TEACHER_CATEGORIES = [
     {name:'木偶纹', fee:90},
     {name:'全脸打造', fee:700}
   ]},
-  { key:'ts', label:'筋膜提升(TS-T/VL-M)', items:[
-    {name:'全脸提升', fee:250}
+  { key:'jy', label:'胶原支架(JY)', items:[
+    {name:'外轮廓固定', fee:50, perUnit:true, unitLabel:'支'}
   ]}
 ];
 function teacherFindItem(catKey, itemName){
@@ -63,24 +63,34 @@ function teacherParseProductName(productNameVal){
   const parts = String(productNameVal||'').split('::');
   const catKey = parts[0];
   const itemName = parts[1];
-  let discountType = 'pct', discountValue = 0;
-  if(parts.length>=4){ discountType = parts[2]==='rm' ? 'rm' : 'pct'; discountValue = Number(parts[3])||0; }
-  else if(parts.length===3){ discountType = 'pct'; discountValue = Number(parts[2])||0; }
+  let discountType = 'pct', discountValue = 0, qty = 1;
+  if(parts.length>=5){
+    discountType = parts[2]==='rm' ? 'rm' : 'pct';
+    discountValue = Number(parts[3])||0;
+    qty = Number(parts[4])||1;
+  } else if(parts.length===4){
+    discountType = parts[2]==='rm' ? 'rm' : 'pct';
+    discountValue = Number(parts[3])||0;
+  } else if(parts.length===3){
+    discountType = 'pct';
+    discountValue = Number(parts[2])||0;
+  }
   const found = teacherFindItem(catKey, itemName);
-  return { found, catKey, itemName, discountType, discountValue };
+  return { found, catKey, itemName, discountType, discountValue, qty: Math.max(1, qty) };
 }
-function teacherDiscountAmount(fee, discountType, discountValue){
-  if(discountType==='rm') return Math.min(fee, Math.max(0, discountValue));
-  return fee * Math.min(100, Math.max(0, discountValue)) / 100;
+function teacherDiscountAmount(baseAmount, discountType, discountValue){
+  if(discountType==='rm') return Math.min(baseAmount, Math.max(0, discountValue));
+  return baseAmount * Math.min(100, Math.max(0, discountValue)) / 100;
 }
 function teacherItemLabel(productNameVal){
-  const { found, discountType, discountValue } = teacherParseProductName(productNameVal);
+  const { found, discountType, discountValue, qty } = teacherParseProductName(productNameVal);
   if(!found) return productNameVal||'—';
   let discountText = '';
   if(discountValue>0){
     discountText = discountType==='rm' ? `（减RM${discountValue}）` : `（打${(100-discountValue)/10}折）`;
   }
-  return `${found.cat.label}-${found.item.name}${discountText}`;
+  const qtyText = (found.item.perUnit && qty>1) ? ` × ${qty}${found.item.unitLabel||'支'}` : '';
+  return `${found.cat.label}-${found.item.name}${qtyText}${discountText}`;
 }
 
 const PERSONAL_AD_TIERS = [
@@ -551,6 +561,10 @@ function buildTeacherSection(){
       <div class="field"><label for="t_date">日期</label><input type="date" id="t_date" /></div>
       <div class="field"><label for="t_category">项目类别</label><select id="t_category"></select></div>
       <div class="field"><label for="t_item">具体部位 / 项目</label><select id="t_item"></select></div>
+      <div class="field" id="t_qty_field" style="display:none;">
+        <label for="t_qty" id="t_qty_label">数量</label>
+        <input type="number" id="t_qty" min="1" step="1" value="1" />
+      </div>
       <div class="field"><label for="t_client">客户名称</label><input type="text" id="t_client" placeholder="选填" /></div>
       <div class="field">
         <label for="t_discount">给顾客的折扣（选填）</label>
@@ -576,8 +590,9 @@ function buildTeacherSection(){
   renderTeacherItemSelect();
   updateTeacherPreview();
 
-  catSel.addEventListener('change', ()=>{ renderTeacherItemSelect(); updateTeacherPreview(); });
-  document.getElementById('t_item').addEventListener('change', updateTeacherPreview);
+  catSel.addEventListener('change', ()=>{ renderTeacherItemSelect(); updateTeacherQtyVisibility(); updateTeacherPreview(); });
+  document.getElementById('t_item').addEventListener('change', ()=>{ updateTeacherQtyVisibility(); updateTeacherPreview(); });
+  document.getElementById('t_qty').addEventListener('input', updateTeacherPreview);
   document.getElementById('t_discount').addEventListener('input', updateTeacherPreview);
   document.getElementById('t_discount_type').addEventListener('change', updateTeacherPreview);
   document.getElementById('addTeacherRecordBtn').addEventListener('click', submitTeacherRecord);
@@ -587,14 +602,34 @@ function renderTeacherItemSelect(){
   const catKey = document.getElementById('t_category').value;
   const cat = TEACHER_CATEGORIES.find(c=>c.key===catKey);
   const sel = document.getElementById('t_item');
-  sel.innerHTML = (cat?cat.items:[]).map(i=>`<option value="${escapeHtml(i.name)}">${escapeHtml(i.name)}（RM${i.fee}）</option>`).join('');
+  sel.innerHTML = (cat?cat.items:[]).map(i=>`<option value="${escapeHtml(i.name)}">${escapeHtml(i.name)}（RM${i.fee}${i.perUnit?'/'+(i.unitLabel||'支'):''}）</option>`).join('');
+  updateTeacherQtyVisibility();
 }
 
-function currentTeacherFee(){
+function currentTeacherItem(){
   const catKey = document.getElementById('t_category').value;
   const itemName = document.getElementById('t_item').value;
-  const found = teacherFindItem(catKey, itemName);
-  return found ? found.item.fee : 0;
+  return teacherFindItem(catKey, itemName);
+}
+
+function updateTeacherQtyVisibility(){
+  const found = currentTeacherItem();
+  const qtyField = document.getElementById('t_qty_field');
+  const show = !!(found && found.item.perUnit);
+  qtyField.style.display = show ? '' : 'none';
+  if(!show){ document.getElementById('t_qty').value = 1; }
+  else{ document.getElementById('t_qty_label').textContent = `${found.item.unitLabel||'支'}数`; }
+}
+
+function currentTeacherQty(){
+  const found = currentTeacherItem();
+  if(!found || !found.item.perUnit) return 1;
+  return Math.max(1, Number(document.getElementById('t_qty').value)||1);
+}
+
+function currentTeacherBaseAmount(){
+  const found = currentTeacherItem();
+  return found ? found.item.fee * currentTeacherQty() : 0;
 }
 
 function currentTeacherDiscountType(){
@@ -610,18 +645,18 @@ function currentTeacherDiscountValue(){
 function updateTeacherPreview(){
   const box = document.getElementById('teacherCommissionPreview');
   if(!box) return;
-  const fee = currentTeacherFee();
+  const baseAmount = currentTeacherBaseAmount();
   const dType = currentTeacherDiscountType();
   const dValue = currentTeacherDiscountValue();
-  const discountAmount = teacherDiscountAmount(fee, dType, dValue);
-  const finalFee = fee - discountAmount;
+  const discountAmount = teacherDiscountAmount(baseAmount, dType, dValue);
+  const finalFee = baseAmount - discountAmount;
   if(dValue>0){
     const discountLabel = dType==='rm' ? `折扣 -RM${dValue}` : `折扣 ${dValue}%`;
-    box.innerHTML = `<div class="row"><span>原价手工费</span><span class="num">${fmt(fee)}</span></div>
+    box.innerHTML = `<div class="row"><span>原价手工费</span><span class="num">${fmt(baseAmount)}</span></div>
       <div class="row"><span>${discountLabel}</span><span class="num">-${fmt(discountAmount)}</span></div>
       <div class="row"><span>实收手工费</span><span class="num">${fmt(finalFee)}</span></div>`;
   } else {
-    box.innerHTML = `<div class="row"><span>手工费</span><span class="num">${fmt(fee)}</span></div>`;
+    box.innerHTML = `<div class="row"><span>手工费</span><span class="num">${fmt(baseAmount)}</span></div>`;
   }
 }
 
@@ -634,17 +669,19 @@ async function submitTeacherRecord(){
   const client = document.getElementById('t_client').value.trim();
   const dType = currentTeacherDiscountType();
   const dValue = currentTeacherDiscountValue();
+  const qty = currentTeacherQty();
   const note = document.getElementById('t_note').value.trim();
   if(!date){ errEl.textContent = '请填写日期。'; return; }
   const found = teacherFindItem(catKey, itemName);
   if(!found){ errEl.textContent = '请选择项目类别和具体部位。'; return; }
 
-  const discountAmount = teacherDiscountAmount(found.item.fee, dType, dValue);
-  const finalFee = Math.round((found.item.fee - discountAmount) * 100) / 100;
+  const baseAmount = found.item.fee * qty;
+  const discountAmount = teacherDiscountAmount(baseAmount, dType, dValue);
+  const finalFee = Math.round((baseAmount - discountAmount) * 100) / 100;
   const rec = {
     type:'teacher_service', date, client, note, status:'pending',
     created_by: currentProfile.id, person_id: currentProfile.id,
-    product_name: `${catKey}::${itemName}::${dType}::${dValue}`, amount: finalFee
+    product_name: `${catKey}::${itemName}::${dType}::${dValue}::${qty}`, amount: finalFee
   };
 
   const { error } = await sb.from('records').insert(rec);
@@ -652,6 +689,7 @@ async function submitTeacherRecord(){
 
   document.getElementById('t_client').value='';
   document.getElementById('t_discount').value='';
+  document.getElementById('t_qty').value='1';
   document.getElementById('t_note').value='';
   const ym = date.slice(0,7);
   if(document.getElementById('monthPicker').value!==ym){ document.getElementById('monthPicker').value=ym; }
