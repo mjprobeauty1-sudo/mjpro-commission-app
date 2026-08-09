@@ -60,15 +60,27 @@ function teacherFindItem(catKey, itemName){
   return item ? {cat, item} : null;
 }
 function teacherParseProductName(productNameVal){
-  const [catKey, itemName, discountPctRaw] = String(productNameVal||'').split('::');
+  const parts = String(productNameVal||'').split('::');
+  const catKey = parts[0];
+  const itemName = parts[1];
+  let discountType = 'pct', discountValue = 0;
+  if(parts.length>=4){ discountType = parts[2]==='rm' ? 'rm' : 'pct'; discountValue = Number(parts[3])||0; }
+  else if(parts.length===3){ discountType = 'pct'; discountValue = Number(parts[2])||0; }
   const found = teacherFindItem(catKey, itemName);
-  const discountPct = Number(discountPctRaw)||0;
-  return { found, catKey, itemName, discountPct };
+  return { found, catKey, itemName, discountType, discountValue };
+}
+function teacherDiscountAmount(fee, discountType, discountValue){
+  if(discountType==='rm') return Math.min(fee, Math.max(0, discountValue));
+  return fee * Math.min(100, Math.max(0, discountValue)) / 100;
 }
 function teacherItemLabel(productNameVal){
-  const { found, discountPct } = teacherParseProductName(productNameVal);
+  const { found, discountType, discountValue } = teacherParseProductName(productNameVal);
   if(!found) return productNameVal||'—';
-  return `${found.cat.label}-${found.item.name}${discountPct>0?`（打${(100-discountPct)/10}折）`:''}`;
+  let discountText = '';
+  if(discountValue>0){
+    discountText = discountType==='rm' ? `（减RM${discountValue}）` : `（打${(100-discountValue)/10}折）`;
+  }
+  return `${found.cat.label}-${found.item.name}${discountText}`;
 }
 
 const PERSONAL_AD_TIERS = [
@@ -540,8 +552,16 @@ function buildTeacherSection(){
       <div class="field"><label for="t_category">项目类别</label><select id="t_category"></select></div>
       <div class="field"><label for="t_item">具体部位 / 项目</label><select id="t_item"></select></div>
       <div class="field"><label for="t_client">客户名称</label><input type="text" id="t_client" placeholder="选填" /></div>
-      <div class="field"><label for="t_discount">给顾客的折扣 (%)</label><input type="number" id="t_discount" min="0" max="100" step="1" placeholder="0" />
-        <p class="hint">例如打9折，这里填 10（代表让了10%），手工费会跟着按比例扣。没有折扣就留空或填0。</p>
+      <div class="field">
+        <label for="t_discount">给顾客的折扣（选填）</label>
+        <div style="display:flex;gap:8px;">
+          <select id="t_discount_type" style="max-width:130px;">
+            <option value="pct">百分比 %</option>
+            <option value="rm">金额 RM</option>
+          </select>
+          <input type="number" id="t_discount" min="0" step="0.01" placeholder="0" />
+        </div>
+        <p class="hint" id="t_discount_hint">例如打9折，选「百分比」填 10（代表让了10%）；如果是直接减免一个金额，选「金额 RM」填要扣掉的数目。手工费会跟着扣，没有折扣就留空或填0。</p>
       </div>
       <div class="preview-commission" id="teacherCommissionPreview"></div>
       <div class="field"><label for="t_note">备注</label><input type="text" id="t_note" placeholder="选填" /></div>
@@ -559,6 +579,7 @@ function buildTeacherSection(){
   catSel.addEventListener('change', ()=>{ renderTeacherItemSelect(); updateTeacherPreview(); });
   document.getElementById('t_item').addEventListener('change', updateTeacherPreview);
   document.getElementById('t_discount').addEventListener('input', updateTeacherPreview);
+  document.getElementById('t_discount_type').addEventListener('change', updateTeacherPreview);
   document.getElementById('addTeacherRecordBtn').addEventListener('click', submitTeacherRecord);
 }
 
@@ -576,20 +597,28 @@ function currentTeacherFee(){
   return found ? found.item.fee : 0;
 }
 
-function currentTeacherDiscountPct(){
+function currentTeacherDiscountType(){
+  const el = document.getElementById('t_discount_type');
+  return el && el.value==='rm' ? 'rm' : 'pct';
+}
+
+function currentTeacherDiscountValue(){
   const val = Number(document.getElementById('t_discount').value)||0;
-  return Math.min(100, Math.max(0, val));
+  return Math.max(0, val);
 }
 
 function updateTeacherPreview(){
   const box = document.getElementById('teacherCommissionPreview');
   if(!box) return;
   const fee = currentTeacherFee();
-  const discountPct = currentTeacherDiscountPct();
-  const finalFee = fee * (1 - discountPct/100);
-  if(discountPct>0){
+  const dType = currentTeacherDiscountType();
+  const dValue = currentTeacherDiscountValue();
+  const discountAmount = teacherDiscountAmount(fee, dType, dValue);
+  const finalFee = fee - discountAmount;
+  if(dValue>0){
+    const discountLabel = dType==='rm' ? `折扣 -RM${dValue}` : `折扣 ${dValue}%`;
     box.innerHTML = `<div class="row"><span>原价手工费</span><span class="num">${fmt(fee)}</span></div>
-      <div class="row"><span>折扣 ${discountPct}%</span><span class="num">-${fmt(fee*discountPct/100)}</span></div>
+      <div class="row"><span>${discountLabel}</span><span class="num">-${fmt(discountAmount)}</span></div>
       <div class="row"><span>实收手工费</span><span class="num">${fmt(finalFee)}</span></div>`;
   } else {
     box.innerHTML = `<div class="row"><span>手工费</span><span class="num">${fmt(fee)}</span></div>`;
@@ -603,17 +632,19 @@ async function submitTeacherRecord(){
   const catKey = document.getElementById('t_category').value;
   const itemName = document.getElementById('t_item').value;
   const client = document.getElementById('t_client').value.trim();
-  const discountPct = currentTeacherDiscountPct();
+  const dType = currentTeacherDiscountType();
+  const dValue = currentTeacherDiscountValue();
   const note = document.getElementById('t_note').value.trim();
   if(!date){ errEl.textContent = '请填写日期。'; return; }
   const found = teacherFindItem(catKey, itemName);
   if(!found){ errEl.textContent = '请选择项目类别和具体部位。'; return; }
 
-  const finalFee = Math.round(found.item.fee * (1 - discountPct/100) * 100) / 100;
+  const discountAmount = teacherDiscountAmount(found.item.fee, dType, dValue);
+  const finalFee = Math.round((found.item.fee - discountAmount) * 100) / 100;
   const rec = {
     type:'teacher_service', date, client, note, status:'pending',
     created_by: currentProfile.id, person_id: currentProfile.id,
-    product_name: `${catKey}::${itemName}::${discountPct}`, amount: finalFee
+    product_name: `${catKey}::${itemName}::${dType}::${dValue}`, amount: finalFee
   };
 
   const { error } = await sb.from('records').insert(rec);
