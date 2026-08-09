@@ -17,7 +17,7 @@ const TYPES = {
   ...Object.fromEntries(OP_TYPES.map(o=>[o.key, { label:o.label, groups:['client'] }])),
   antiaging:{ label:'抗衰',                groups:['client','product','amount'] },
   care:    { label:'润颜术VIP套餐',  groups:['client','amount'] },
-  review:  { label:'客户Review点评',       groups:['client','amount'] },
+  review:  { label:'客户Review点评',       groups:['client'] },
   tattoo:  { label:'纹绣服务',             groups:['source','client','amount'] }
 };
 const ANTIAGING_OPFEE_VALUE_PREFIX = 'opfee:';
@@ -345,10 +345,7 @@ function applyFieldVisibility(){
 
   const amountInput = document.getElementById('f_amount');
   const label = document.getElementById('f_amount_label');
-  if(currentType==='review'){
-    label.textContent = '点评奖励金额 (RM)'; amountInput.min=3; amountInput.max=5; amountInput.step=0.5;
-    if(!amountInput.value){ amountInput.value = settings.reviewDefaultAmount; }
-  } else if(currentType==='antiaging'){
+  if(currentType==='antiaging'){
     label.textContent = '本次金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='care'){
     label.textContent = '订单金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
@@ -404,7 +401,7 @@ function updatePreview(){
     const eligible = amt>=1000;
     lines.push({label: eligible?'成交费 5%':'未满 RM1000，不计提成', val: eligible?amt*0.05:0});
   } else if(currentType==='review'){
-    lines.push({label:'点评奖励', val: amt});
+    lines.push({label:'点评奖励（后台设定金额）', val: settings.reviewDefaultAmount});
   } else if(currentType==='tattoo'){
     const src = document.getElementById('f_source').value;
     if(src==='self'){
@@ -447,7 +444,7 @@ async function submitRecord(){
     if(!rec.amount){ errEl.textContent = '请填写订单金额。'; return; }
   } else if(currentType==='review'){
     rec.person_id = currentProfile.id;
-    rec.amount = Number(document.getElementById('f_amount').value)||settings.reviewDefaultAmount;
+    rec.amount = settings.reviewDefaultAmount;
   } else if(currentType==='tattoo'){
     rec.source = document.getElementById('f_source').value;
     rec.amount = Number(document.getElementById('f_amount').value)||0;
