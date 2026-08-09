@@ -18,10 +18,58 @@ const TYPES = {
   antiaging:{ label:'抗衰',                groups:['client','product','amount'] },
   care:    { label:'润颜术VIP套餐',  groups:['client','amount'] },
   review:  { label:'客户Review点评',       groups:['client'] },
-  tattoo:  { label:'纹绣服务',             groups:['source','client','amount'] }
+  tattoo:  { label:'纹绣服务',             groups:['source','client','amount'] },
+  teacher_service: { label:'抗衰手工项目（老师）', groups:[] }
 };
 const ANTIAGING_OPFEE_VALUE_PREFIX = 'opfee:';
 const ANTIAGING_PRODUCT_VALUE_PREFIX = 'product:';
+
+const TEACHER_CATEGORIES = [
+  { key:'qz', label:'液态祛皱(QZ)', items:[
+    {name:'抬头纹', fee:60},
+    {name:'川字纹', fee:60},
+    {name:'眼下细纹', fee:60},
+    {name:'鱼尾纹', fee:60},
+    {name:'美人线', fee:60},
+    {name:'上庭小拉皮', fee:60},
+    {name:'眼综合（提眉/提眼角/提眼眶）', fee:60},
+    {name:'全脸祛皱', fee:300}
+  ]},
+  { key:'xb', label:'细胞激活(XB)-X', items:[
+    {name:'川字纹', fee:65},
+    {name:'额头精雕', fee:150},
+    {name:'法令纹激活', fee:90},
+    {name:'太阳穴精雕', fee:150},
+    {name:'脸颊精雕', fee:150},
+    {name:'眼袋/泪沟修复', fee:90},
+    {name:'印堂（命宫）', fee:90},
+    {name:'印第安纹/苹果肌', fee:90},
+    {name:'富贵耳', fee:90},
+    {name:'鼻基底', fee:90},
+    {name:'木偶纹', fee:90},
+    {name:'全脸打造', fee:700}
+  ]},
+  { key:'ts', label:'筋膜提升(TS-T/VL-M)', items:[
+    {name:'全脸提升', fee:250}
+  ]}
+];
+function teacherFindItem(catKey, itemName){
+  const cat = TEACHER_CATEGORIES.find(c=>c.key===catKey);
+  if(!cat) return null;
+  const item = cat.items.find(i=>i.name===itemName);
+  return item ? {cat, item} : null;
+}
+function teacherParseProductName(productNameVal){
+  const [catKey, itemName, discountPctRaw] = String(productNameVal||'').split('::');
+  const found = teacherFindItem(catKey, itemName);
+  const discountPct = Number(discountPctRaw)||0;
+  return { found, catKey, itemName, discountPct };
+}
+function teacherItemLabel(productNameVal){
+  const { found, discountPct } = teacherParseProductName(productNameVal);
+  if(!found) return productNameVal||'—';
+  return `${found.cat.label}-${found.item.name}${discountPct>0?`（打${(100-discountPct)/10}折）`:''}`;
+}
 
 const PERSONAL_AD_TIERS = [
   {min:0, max:20000, rate:0.01},
@@ -40,6 +88,10 @@ let antiAgingProducts = [];
 let antiagingOpItems = [];
 let settings = { reviewDefaultAmount:4 };
 let currentType = 'invite';
+
+function roleLabel(role){
+  return role==='admin' ? '管理员' : role==='teacher' ? '技术老师' : '员工';
+}
 
 function personName(id){
   if(!id) return '—';
@@ -109,6 +161,9 @@ function allocationsFor(record, adRateByPerson){
         ];
       }
     }
+    case 'teacher_service': {
+      return [{who:personName(record.personId), role:teacherItemLabel(record.productName), amount: amt}];
+    }
     default: return [];
   }
 }
@@ -171,15 +226,19 @@ async function bootApp(){
 
   document.getElementById('loginView').style.display = 'none';
   document.getElementById('appView').style.display = '';
-  document.getElementById('userChip').textContent = `${currentProfile.name}（${currentProfile.role==='admin'?'管理员':'员工'}）`;
-  document.getElementById('pageTitle').textContent = currentProfile.role==='admin' ? '团队提成管理' : '我的提成';
+  document.getElementById('userChip').textContent = `${currentProfile.name}（${roleLabel(currentProfile.role)}）`;
+  document.getElementById('pageTitle').textContent = currentProfile.role==='admin' ? '团队提成管理' : (currentProfile.role==='teacher' ? '老师手工费' : '我的提成');
 
   const now = new Date();
   document.getElementById('monthPicker').value = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
   document.getElementById('monthPicker').addEventListener('change', renderAll);
 
   await loadAllData();
-  buildStaffSection();
+  if(currentProfile.role==='teacher'){
+    buildTeacherSection();
+  } else {
+    buildStaffSection();
+  }
   if(currentProfile.role==='admin'){
     document.getElementById('adminSection').style.display = '';
     buildAdminSection();
@@ -227,15 +286,20 @@ async function loadRecordsForMonth(){
 async function renderAll(){
   try{
     await loadRecordsForMonth();
-    updatePreview();
-    renderMyRecords();
+    if(currentProfile.role==='teacher'){
+      updateTeacherPreview();
+      renderMyTeacherRecords();
+    } else {
+      updatePreview();
+      renderMyRecords();
+    }
     if(currentProfile.role==='admin'){
       renderAdminSummary();
       renderAdminRecordsTable();
     }
   }catch(e){
     console.error('renderAll failed:', e);
-    const errEl = document.getElementById('addRecordError');
+    const errEl = document.getElementById(currentProfile.role==='teacher' ? 'addTeacherRecordError' : 'addRecordError');
     if(errEl) errEl.textContent = '画面刷新失败：'+e.message+'（记录可能已经存进去了，请刷新页面确认）';
   }
 }
@@ -303,7 +367,7 @@ function buildStaffSection(){
 
 function renderTypeTabs(){
   const wrap = document.getElementById('typeTabs');
-  wrap.innerHTML = Object.keys(TYPES).map(k=>
+  wrap.innerHTML = Object.keys(TYPES).filter(k=>k!=='teacher_service').map(k=>
     `<button type="button" data-type="${k}" class="${k===currentType?'active':''}">${TYPES[k].label}</button>`
   ).join('');
   wrap.querySelectorAll('button').forEach(btn=>{
@@ -465,6 +529,138 @@ async function submitRecord(){
   await renderAll();
 }
 
+// ---------------- Teacher: new record form ----------------
+function buildTeacherSection(){
+  const el = document.getElementById('teacherSection');
+  el.style.display = '';
+  el.innerHTML = `
+    <div class="panel">
+      <h2>新增手工费记录</h2>
+      <div class="field"><label for="t_date">日期</label><input type="date" id="t_date" /></div>
+      <div class="field"><label for="t_category">项目类别</label><select id="t_category"></select></div>
+      <div class="field"><label for="t_item">具体部位 / 项目</label><select id="t_item"></select></div>
+      <div class="field"><label for="t_client">客户名称</label><input type="text" id="t_client" placeholder="选填" /></div>
+      <div class="field"><label for="t_discount">给顾客的折扣 (%)</label><input type="number" id="t_discount" min="0" max="100" step="1" placeholder="0" />
+        <p class="hint">例如打9折，这里填 10（代表让了10%），手工费会跟着按比例扣。没有折扣就留空或填0。</p>
+      </div>
+      <div class="preview-commission" id="teacherCommissionPreview"></div>
+      <div class="field"><label for="t_note">备注</label><input type="text" id="t_note" placeholder="选填" /></div>
+      <button class="primary" id="addTeacherRecordBtn">记录入账</button>
+      <p class="error-text" id="addTeacherRecordError"></p>
+    </div>
+  `;
+
+  document.getElementById('t_date').value = new Date().toISOString().slice(0,10);
+  const catSel = document.getElementById('t_category');
+  catSel.innerHTML = TEACHER_CATEGORIES.map(c=>`<option value="${c.key}">${escapeHtml(c.label)}</option>`).join('');
+  renderTeacherItemSelect();
+  updateTeacherPreview();
+
+  catSel.addEventListener('change', ()=>{ renderTeacherItemSelect(); updateTeacherPreview(); });
+  document.getElementById('t_item').addEventListener('change', updateTeacherPreview);
+  document.getElementById('t_discount').addEventListener('input', updateTeacherPreview);
+  document.getElementById('addTeacherRecordBtn').addEventListener('click', submitTeacherRecord);
+}
+
+function renderTeacherItemSelect(){
+  const catKey = document.getElementById('t_category').value;
+  const cat = TEACHER_CATEGORIES.find(c=>c.key===catKey);
+  const sel = document.getElementById('t_item');
+  sel.innerHTML = (cat?cat.items:[]).map(i=>`<option value="${escapeHtml(i.name)}">${escapeHtml(i.name)}（RM${i.fee}）</option>`).join('');
+}
+
+function currentTeacherFee(){
+  const catKey = document.getElementById('t_category').value;
+  const itemName = document.getElementById('t_item').value;
+  const found = teacherFindItem(catKey, itemName);
+  return found ? found.item.fee : 0;
+}
+
+function currentTeacherDiscountPct(){
+  const val = Number(document.getElementById('t_discount').value)||0;
+  return Math.min(100, Math.max(0, val));
+}
+
+function updateTeacherPreview(){
+  const box = document.getElementById('teacherCommissionPreview');
+  if(!box) return;
+  const fee = currentTeacherFee();
+  const discountPct = currentTeacherDiscountPct();
+  const finalFee = fee * (1 - discountPct/100);
+  if(discountPct>0){
+    box.innerHTML = `<div class="row"><span>原价手工费</span><span class="num">${fmt(fee)}</span></div>
+      <div class="row"><span>折扣 ${discountPct}%</span><span class="num">-${fmt(fee*discountPct/100)}</span></div>
+      <div class="row"><span>实收手工费</span><span class="num">${fmt(finalFee)}</span></div>`;
+  } else {
+    box.innerHTML = `<div class="row"><span>手工费</span><span class="num">${fmt(fee)}</span></div>`;
+  }
+}
+
+async function submitTeacherRecord(){
+  const errEl = document.getElementById('addTeacherRecordError');
+  errEl.textContent = '';
+  const date = document.getElementById('t_date').value;
+  const catKey = document.getElementById('t_category').value;
+  const itemName = document.getElementById('t_item').value;
+  const client = document.getElementById('t_client').value.trim();
+  const discountPct = currentTeacherDiscountPct();
+  const note = document.getElementById('t_note').value.trim();
+  if(!date){ errEl.textContent = '请填写日期。'; return; }
+  const found = teacherFindItem(catKey, itemName);
+  if(!found){ errEl.textContent = '请选择项目类别和具体部位。'; return; }
+
+  const finalFee = Math.round(found.item.fee * (1 - discountPct/100) * 100) / 100;
+  const rec = {
+    type:'teacher_service', date, client, note, status:'pending',
+    created_by: currentProfile.id, person_id: currentProfile.id,
+    product_name: `${catKey}::${itemName}::${discountPct}`, amount: finalFee
+  };
+
+  const { error } = await sb.from('records').insert(rec);
+  if(error){ errEl.textContent = '保存失败：'+error.message; return; }
+
+  document.getElementById('t_client').value='';
+  document.getElementById('t_discount').value='';
+  document.getElementById('t_note').value='';
+  const ym = date.slice(0,7);
+  if(document.getElementById('monthPicker').value!==ym){ document.getElementById('monthPicker').value=ym; }
+  await renderAll();
+}
+
+function renderMyTeacherRecords(){
+  const mine = records.filter(r=>r.type==='teacher_service' && r.personId===currentProfile.id);
+  let total = 0;
+  const rows = mine.map(r=>{
+    const amt = Number(r.amount)||0;
+    total += amt;
+    return `<tr>
+      <td>${r.date}</td>
+      <td>${escapeHtml(teacherItemLabel(r.productName))}</td>
+      <td>${escapeHtml(r.client||'—')}</td>
+      <td>${escapeHtml(r.note||'—')}</td>
+      <td class="num" style="font-weight:600;">${fmt(amt)}</td>
+      <td><span class="pill ${r.status==='paid'?'paid':'pending'}">${r.status==='paid'?'已结算':'待结算'}</span></td>
+    </tr>`;
+  }).join('');
+
+  const el = document.getElementById('teacherSection');
+  let listWrap = document.getElementById('myTeacherRecordsPanel');
+  if(!listWrap){
+    listWrap = document.createElement('div');
+    listWrap.id = 'myTeacherRecordsPanel';
+    listWrap.className = 'panel';
+    el.appendChild(listWrap);
+  }
+  listWrap.innerHTML = `
+    <h2>我本月的记录</h2>
+    <div class="summary-strip"><div class="stat total"><p class="label">本月合计</p><p class="value num">${fmt(total)}</p></div></div>
+    <div class="table-scroll">
+      <table><thead><tr><th>日期</th><th>项目</th><th>客户</th><th>折扣/备注</th><th class="num">金额</th><th>状态</th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="6" class="empty">本月还没有记录</td></tr>'}</tbody></table>
+    </div>
+  `;
+}
+
 // ---------------- Staff: my records this month ----------------
 function renderMyRecords(){
   const mine = records.filter(r=> r.personId===currentProfile.id || r.providerId===currentProfile.id || r.referrerId===currentProfile.id || r.createdBy===currentProfile.id);
@@ -518,7 +714,7 @@ function buildAdminSection(){
       <div class="add-row">
         <input type="text" id="newPersonName" placeholder="姓名" />
         <input type="text" id="newPersonPin" placeholder="初始PIN（6位数字）" maxlength="6" />
-        <select id="newPersonRole"><option value="staff">员工</option><option value="admin">管理员</option></select>
+        <select id="newPersonRole"><option value="staff">员工</option><option value="teacher">技术老师</option><option value="admin">管理员</option></select>
         <button id="addPersonBtn">添加人员</button>
       </div>
       <p class="hint">新人第一次登录用这个初始PIN，之后可以自己改。</p>
@@ -580,7 +776,7 @@ function renderRoster(){
   const active = people.filter(p=>p.active);
   const inactive = people.filter(p=>!p.active);
   wrap.innerHTML = active.map(p=>`
-    <span class="roster-chip">${escapeHtml(p.name)} <span class="hint">(${p.role==='admin'?'管理员':'员工'})</span>
+    <span class="roster-chip">${escapeHtml(p.name)} <span class="hint">(${roleLabel(p.role)})</span>
       ${p.id===currentProfile.id ? '' : `<button data-remove-person="${p.id}" style="margin-left:6px;">移除</button>`}
     </span>`).join('') || '<p class="empty">还没有人员</p>';
 
@@ -648,7 +844,7 @@ function renderOpRates(){
         <span>${op.label}</span>
       </div>
       <div class="roster-chips">
-        ${people.filter(p=>p.active).map(p=>`<span class="roster-chip">${escapeHtml(p.name)} <input type="number" class="num" min="0" step="1" value="${p[op.field]||0}" data-op-rate="${p.id}" data-op-field="${op.field}" /></span>`).join('') || '<span class="empty">先添加人员</span>'}
+        ${people.filter(p=>p.active && p.role!=='teacher').map(p=>`<span class="roster-chip">${escapeHtml(p.name)} <input type="number" class="num" min="0" step="1" value="${p[op.field]||0}" data-op-rate="${p.id}" data-op-field="${op.field}" /></span>`).join('') || '<span class="empty">先添加人员</span>'}
       </div>
     </div>
   `).join('');
@@ -710,7 +906,7 @@ function renderAntiOpItems(){
         </span>
       </div>
       <div class="roster-chips" style="margin-bottom:0;">
-        ${people.filter(p=>p.active).map(p=>`<span class="roster-chip">${escapeHtml(p.name)} <input type="number" class="num" min="0" step="1" value="${(item.rates&&item.rates[p.id])||0}" data-opitem="${item.id}" data-opperson="${p.id}" /></span>`).join('') || '<span class="empty">先添加人员</span>'}
+        ${people.filter(p=>p.active && p.role!=='teacher').map(p=>`<span class="roster-chip">${escapeHtml(p.name)} <input type="number" class="num" min="0" step="1" value="${(item.rates&&item.rates[p.id])||0}" data-opitem="${item.id}" data-opperson="${p.id}" /></span>`).join('') || '<span class="empty">先添加人员</span>'}
       </div>
     </div>
   `).join('') || '<p class="empty">还没有操作费项目</p>';
