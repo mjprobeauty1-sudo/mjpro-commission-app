@@ -188,7 +188,7 @@ async function bootApp(){
 }
 
 function mapProfile(row){
-  return { id:row.id, name:row.name, role:row.role, facialRate:row.facial_rate, lashRate:row.lash_rate, icepointRate:row.icepoint_rate };
+  return { id:row.id, name:row.name, role:row.role, facialRate:row.facial_rate, lashRate:row.lash_rate, icepointRate:row.icepoint_rate, active: row.active!==false };
 }
 function mapRecord(row){
   return {
@@ -577,7 +577,42 @@ function buildAdminSection(){
 
 function renderRoster(){
   const wrap = document.getElementById('rosterChips');
-  wrap.innerHTML = people.map(p=>`<span class="roster-chip">${escapeHtml(p.name)} <span class="hint">(${p.role==='admin'?'管理员':'员工'})</span></span>`).join('') || '<p class="empty">还没有人员</p>';
+  const active = people.filter(p=>p.active);
+  const inactive = people.filter(p=>!p.active);
+  wrap.innerHTML = active.map(p=>`
+    <span class="roster-chip">${escapeHtml(p.name)} <span class="hint">(${p.role==='admin'?'管理员':'员工'})</span>
+      ${p.id===currentProfile.id ? '' : `<button data-remove-person="${p.id}" style="margin-left:6px;">移除</button>`}
+    </span>`).join('') || '<p class="empty">还没有人员</p>';
+
+  wrap.querySelectorAll('[data-remove-person]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const p = people.find(x=>x.id===btn.getAttribute('data-remove-person'));
+      if(!confirm(`确定要移除「${p.name}」吗？移除后TA不能再登录，但TA之前的记录都会保留。`)) return;
+      await sb.from('profiles').update({active:false}).eq('id', p.id);
+      await loadAllData();
+      renderRoster(); renderOpRates(); renderAntiOpItems();
+    });
+  });
+
+  let inactiveWrap = document.getElementById('inactiveRosterChips');
+  if(!inactiveWrap){
+    inactiveWrap = document.createElement('div');
+    inactiveWrap.id = 'inactiveRosterChips';
+    inactiveWrap.style.marginTop = '10px';
+    wrap.parentNode.insertBefore(inactiveWrap, wrap.nextSibling);
+  }
+  if(inactive.length===0){ inactiveWrap.innerHTML = ''; return; }
+  inactiveWrap.innerHTML = `<p class="hint" style="margin-bottom:6px;">已移除：</p>` + inactive.map(p=>`
+    <span class="roster-chip" style="opacity:0.6;">${escapeHtml(p.name)}
+      <button data-restore-person="${p.id}" style="margin-left:6px;">恢复</button>
+    </span>`).join('');
+  inactiveWrap.querySelectorAll('[data-restore-person]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      await sb.from('profiles').update({active:true}).eq('id', btn.getAttribute('data-restore-person'));
+      await loadAllData();
+      renderRoster(); renderOpRates(); renderAntiOpItems();
+    });
+  });
 }
 
 async function addPerson(){
@@ -613,7 +648,7 @@ function renderOpRates(){
         <span>${op.label}</span>
       </div>
       <div class="roster-chips">
-        ${people.map(p=>`<span class="roster-chip">${escapeHtml(p.name)} <input type="number" class="num" min="0" step="1" value="${p[op.field]||0}" data-op-rate="${p.id}" data-op-field="${op.field}" /></span>`).join('') || '<span class="empty">先添加人员</span>'}
+        ${people.filter(p=>p.active).map(p=>`<span class="roster-chip">${escapeHtml(p.name)} <input type="number" class="num" min="0" step="1" value="${p[op.field]||0}" data-op-rate="${p.id}" data-op-field="${op.field}" /></span>`).join('') || '<span class="empty">先添加人员</span>'}
       </div>
     </div>
   `).join('');
@@ -675,7 +710,7 @@ function renderAntiOpItems(){
         </span>
       </div>
       <div class="roster-chips" style="margin-bottom:0;">
-        ${people.map(p=>`<span class="roster-chip">${escapeHtml(p.name)} <input type="number" class="num" min="0" step="1" value="${(item.rates&&item.rates[p.id])||0}" data-opitem="${item.id}" data-opperson="${p.id}" /></span>`).join('') || '<span class="empty">先添加人员</span>'}
+        ${people.filter(p=>p.active).map(p=>`<span class="roster-chip">${escapeHtml(p.name)} <input type="number" class="num" min="0" step="1" value="${(item.rates&&item.rates[p.id])||0}" data-opitem="${item.id}" data-opperson="${p.id}" /></span>`).join('') || '<span class="empty">先添加人员</span>'}
       </div>
     </div>
   `).join('') || '<p class="empty">还没有操作费项目</p>';
