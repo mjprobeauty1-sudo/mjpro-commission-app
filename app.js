@@ -827,6 +827,18 @@ function buildAdminSection(){
         <tbody id="adminRecordsBody"></tbody>
       </table></div>
     </div>
+    <div class="panel">
+      <h2>结算总结（复制发给团队）</h2>
+      <p class="hint" style="margin:0 0 10px;">选一个人，会把TA当月已经标记「已结算」的记录整理成一段文字，复制后可以直接发到 WhatsApp。</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+        <select id="statementPerson"></select>
+        <button id="genStatementBtn">生成结算讯息</button>
+      </div>
+      <textarea id="statementOutput" readonly style="min-height:180px;font-family:var(--font-num);font-size:12.5px;line-height:1.6;" placeholder="点「生成结算讯息」查看内容"></textarea>
+      <div style="margin-top:10px;">
+        <button class="primary" id="copyStatementBtn" style="width:auto;">复制文字</button>
+      </div>
+    </div>
   `;
   renderRoster();
   renderOpRates();
@@ -842,9 +854,62 @@ function buildAdminSection(){
     settings.reviewDefaultAmount = Number(e.target.value)||4;
     await sb.from('settings').update({review_default_amount:settings.reviewDefaultAmount}).eq('id',1);
   });
+  document.getElementById('genStatementBtn').addEventListener('click', ()=>{
+    const personId = document.getElementById('statementPerson').value;
+    const out = document.getElementById('statementOutput');
+    out.value = personId ? (buildStatementText(personId) || '') : '';
+  });
+  document.getElementById('copyStatementBtn').addEventListener('click', async ()=>{
+    const out = document.getElementById('statementOutput');
+    if(!out.value) return;
+    const btn = document.getElementById('copyStatementBtn');
+    try{ await navigator.clipboard.writeText(out.value); }
+    catch(e){ out.removeAttribute('readonly'); out.select(); document.execCommand('copy'); out.setAttribute('readonly','readonly'); }
+    const old = btn.textContent; btn.textContent = '已复制'; setTimeout(()=>{ btn.textContent = old; }, 1500);
+  });
+}
+
+function buildStatementText(personId){
+  const person = people.find(p=>p.id===personId);
+  if(!person) return null;
+  const ym = document.getElementById('monthPicker').value;
+  const adRatesRaw = personalAdTotals(records);
+  const adRateByPerson = {};
+  Object.keys(adRatesRaw).forEach(id=>{ adRateByPerson[id] = tierRate(adRatesRaw[id], PERSONAL_AD_TIERS); });
+
+  const mine = records.filter(r=> recordPrimaryPersonId(r)===personId && r.status==='paid')
+    .slice().sort((a,b)=> a.date<b.date?-1:1);
+
+  let total = 0;
+  const lines = mine.map(r=>{
+    const allocs = allocationsFor(r, adRateByPerson).filter(a=>a.who===person.name);
+    const sum = allocs.reduce((s,a)=>s+a.amount,0);
+    total += sum;
+    const detail = r.type==='teacher_service' ? teacherItemLabel(r.productName) : recordDetailText(r);
+    const detailText = (detail && detail!=='—') ? `（${detail}）` : '';
+    const clientPart = r.client ? ` ${r.client}` : '';
+    return `- ${r.date} ${TYPES[r.type].label}${clientPart}${detailText}：${fmt(sum)}`;
+  }).filter(Boolean);
+
+  const [y,m] = ym.split('-');
+  const header = `【MJPRO 提成结算】${person.name} · ${y}年${parseInt(m,10)}月`;
+  if(lines.length===0){
+    return `${header}\n\n本月还没有已结算的记录。`;
+  }
+  return [header, '', ...lines, '', `已结算合计：${fmt(total)}`].join('\n');
+}
+
+function renderStatementPersonSelect(){
+  const sel = document.getElementById('statementPerson');
+  if(!sel) return;
+  const prevVal = sel.value;
+  const sorted = people.filter(p=>p.active).slice().sort((a,b)=>a.name.localeCompare(b.name));
+  sel.innerHTML = sorted.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+  if(sorted.some(p=>p.id===prevVal)) sel.value = prevVal;
 }
 
 function renderRoster(){
+  renderStatementPersonSelect();
   const wrap = document.getElementById('rosterChips');
   const active = people.filter(p=>p.active);
   const inactive = people.filter(p=>!p.active);
