@@ -818,7 +818,10 @@ function buildAdminSection(){
       </div>
     </div>
     <div class="panel">
-      <h2>本月全部明细</h2>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+        <h2 style="margin:0;">本月全部明细</h2>
+        <select id="adminRecordsPersonFilter" style="max-width:200px;"><option value="">全部人员</option></select>
+      </div>
       <div class="table-scroll"><table>
         <thead><tr><th>日期</th><th>类型</th><th>人员</th><th>客户</th><th class="num">分成明细</th><th>状态</th></tr></thead>
         <tbody id="adminRecordsBody"></tbody>
@@ -834,6 +837,7 @@ function buildAdminSection(){
   document.getElementById('addPersonBtn').addEventListener('click', addPerson);
   document.getElementById('addProductBtn').addEventListener('click', addProduct);
   document.getElementById('addOpItemBtn').addEventListener('click', addOpItem);
+  document.getElementById('adminRecordsPersonFilter').addEventListener('change', renderAdminRecordsTable);
   document.getElementById('reviewDefaultInput').addEventListener('input', async (e)=>{
     settings.reviewDefaultAmount = Number(e.target.value)||4;
     await sb.from('settings').update({review_default_amount:settings.reviewDefaultAmount}).eq('id',1);
@@ -1036,16 +1040,31 @@ function renderAdminSummary(){
   `;
 }
 
+function recordPrimaryPersonId(r){
+  return r.type==='tattoo' ? (r.source==='self'?r.providerId:r.referrerId) : r.personId;
+}
+
 function renderAdminRecordsTable(){
   const adRatesRaw = personalAdTotals(records);
   const adRateByPerson = {};
   Object.keys(adRatesRaw).forEach(id=>{ adRateByPerson[id] = tierRate(adRatesRaw[id], PERSONAL_AD_TIERS); });
 
+  const filterSel = document.getElementById('adminRecordsPersonFilter');
+  let filterId = '';
+  if(filterSel){
+    const prevVal = filterSel.value;
+    const sorted = [...people].sort((a,b)=>a.name.localeCompare(b.name));
+    filterSel.innerHTML = '<option value="">全部人员</option>' + sorted.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+    if(sorted.some(p=>p.id===prevVal)) filterSel.value = prevVal;
+    filterId = filterSel.value;
+  }
+  const filteredRecords = filterId ? records.filter(r=>recordPrimaryPersonId(r)===filterId) : records;
+
   const body = document.getElementById('adminRecordsBody');
-  body.innerHTML = records.map(r=>{
+  body.innerHTML = filteredRecords.map(r=>{
     const allocs = allocationsFor(r, adRateByPerson);
     const total = allocs.reduce((s,a)=>s+a.amount,0);
-    const who = r.type==='tattoo' ? (r.source==='self'?personName(r.providerId):personName(r.referrerId)) : personName(r.personId);
+    const who = personName(recordPrimaryPersonId(r));
     const allocText = allocs.map(a=>`${escapeHtml(a.who)} · ${escapeHtml(a.role)}：<b class="num">${fmt(a.amount)}</b>`).join('<br/>');
     return `<tr>
       <td class="num">${r.date}</td>
