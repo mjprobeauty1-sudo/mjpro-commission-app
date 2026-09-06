@@ -111,6 +111,7 @@ let antiagingOpItems = [];
 let settings = { reviewDefaultAmount:4 };
 let currentType = 'invite';
 let editingRecordId = null;
+let editingTeacherRecordId = null;
 
 function roleLabel(role){
   return role==='admin' ? '管理员' : role==='teacher' ? '技术老师' : '员工';
@@ -874,6 +875,35 @@ function buildAdminSection(){
       <p class="error-text" id="addPersonError"></p>
     </div>
     <div class="panel">
+      <h2>老师手工费补登 / 编辑</h2>
+      <div class="field"><label for="at_owner">老师</label><select id="at_owner"></select></div>
+      <div class="field"><label for="at_date">日期</label><input type="date" id="at_date" /></div>
+      <div class="field"><label for="at_category">项目类别</label><select id="at_category"></select></div>
+      <div class="field"><label for="at_item">具体部位 / 项目</label><select id="at_item"></select></div>
+      <div class="field" id="at_qty_field" style="display:none;">
+        <label for="at_qty" id="at_qty_label">数量</label>
+        <input type="number" id="at_qty" min="1" step="1" value="1" />
+      </div>
+      <div class="field"><label for="at_client">客户名称</label><input type="text" id="at_client" placeholder="选填" /></div>
+      <div class="field">
+        <label for="at_discount">给顾客的折扣（选填）</label>
+        <div style="display:flex;gap:8px;">
+          <select id="at_discount_type" style="max-width:130px;">
+            <option value="pct">百分比 %</option>
+            <option value="rm">金额 RM</option>
+          </select>
+          <input type="number" id="at_discount" min="0" step="0.01" placeholder="0" />
+        </div>
+      </div>
+      <div class="preview-commission" id="atTeacherCommissionPreview"></div>
+      <div class="field"><label for="at_note">备注</label><input type="text" id="at_note" placeholder="选填" /></div>
+      <div style="display:flex;gap:8px;">
+        <button class="primary" id="addAtTeacherRecordBtn" style="width:100%;">记录入账</button>
+        <button id="cancelAtEditBtn" style="display:none;white-space:nowrap;">取消编辑</button>
+      </div>
+      <p class="error-text" id="addAtTeacherRecordError"></p>
+    </div>
+    <div class="panel">
       <h2>润颜术 / 睫毛 / 冰点 手工费</h2>
       <div id="opRatesWrap"></div>
     </div>
@@ -928,6 +958,7 @@ function buildAdminSection(){
   renderOpRates();
   renderAntiProducts();
   renderAntiOpItems();
+  buildAdminTeacherPanel();
   document.getElementById('reviewDefaultInput').value = settings.reviewDefaultAmount;
 
   document.getElementById('addPersonBtn').addEventListener('click', addPerson);
@@ -951,6 +982,171 @@ function buildAdminSection(){
     catch(e){ out.removeAttribute('readonly'); out.select(); document.execCommand('copy'); out.setAttribute('readonly','readonly'); }
     const old = btn.textContent; btn.textContent = '已复制'; setTimeout(()=>{ btn.textContent = old; }, 1500);
   });
+}
+
+// ---------------- Admin: backfill/edit teacher records ----------------
+function buildAdminTeacherPanel(){
+  const ownerSel = document.getElementById('at_owner');
+  const teachers = people.filter(p=>p.active && p.role==='teacher').slice().sort((a,b)=>a.name.localeCompare(b.name));
+  ownerSel.innerHTML = teachers.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('') || '<option value="">还没有老师</option>';
+
+  document.getElementById('at_date').value = new Date().toISOString().slice(0,10);
+  const catSel = document.getElementById('at_category');
+  catSel.innerHTML = TEACHER_CATEGORIES.map(c=>`<option value="${c.key}">${escapeHtml(c.label)}</option>`).join('');
+  renderAtTeacherItemSelect();
+  updateAtTeacherPreview();
+
+  catSel.addEventListener('change', ()=>{ renderAtTeacherItemSelect(); updateAtTeacherPreview(); });
+  document.getElementById('at_item').addEventListener('change', ()=>{ updateAtTeacherQtyVisibility(); updateAtTeacherPreview(); });
+  document.getElementById('at_qty').addEventListener('input', updateAtTeacherPreview);
+  document.getElementById('at_discount').addEventListener('input', updateAtTeacherPreview);
+  document.getElementById('at_discount_type').addEventListener('change', updateAtTeacherPreview);
+  document.getElementById('addAtTeacherRecordBtn').addEventListener('click', submitAtTeacherRecord);
+  document.getElementById('cancelAtEditBtn').addEventListener('click', ()=>{
+    exitAtEditMode();
+    document.getElementById('at_client').value='';
+    document.getElementById('at_discount').value='';
+    document.getElementById('at_qty').value='1';
+    document.getElementById('at_note').value='';
+    document.getElementById('at_date').value = new Date().toISOString().slice(0,10);
+    updateAtTeacherPreview();
+  });
+}
+
+function renderAtTeacherItemSelect(){
+  const catKey = document.getElementById('at_category').value;
+  const cat = TEACHER_CATEGORIES.find(c=>c.key===catKey);
+  const sel = document.getElementById('at_item');
+  sel.innerHTML = (cat?cat.items:[]).map(i=>`<option value="${escapeHtml(i.name)}">${escapeHtml(i.name)}（RM${i.fee}${i.perUnit?'/'+(i.unitLabel||'支'):''}）</option>`).join('');
+  updateAtTeacherQtyVisibility();
+}
+
+function currentAtTeacherItem(){
+  const catKey = document.getElementById('at_category').value;
+  const itemName = document.getElementById('at_item').value;
+  return teacherFindItem(catKey, itemName);
+}
+
+function updateAtTeacherQtyVisibility(){
+  const found = currentAtTeacherItem();
+  const qtyField = document.getElementById('at_qty_field');
+  const show = !!(found && found.item.perUnit);
+  qtyField.style.display = show ? '' : 'none';
+  if(!show){ document.getElementById('at_qty').value = 1; }
+  else{ document.getElementById('at_qty_label').textContent = `${found.item.unitLabel||'支'}数`; }
+}
+
+function currentAtTeacherQty(){
+  const found = currentAtTeacherItem();
+  if(!found || !found.item.perUnit) return 1;
+  return Math.max(1, Number(document.getElementById('at_qty').value)||1);
+}
+
+function currentAtTeacherBaseAmount(){
+  const found = currentAtTeacherItem();
+  return found ? found.item.fee * currentAtTeacherQty() : 0;
+}
+
+function currentAtTeacherDiscountType(){
+  const el = document.getElementById('at_discount_type');
+  return el && el.value==='rm' ? 'rm' : 'pct';
+}
+
+function currentAtTeacherDiscountValue(){
+  return Math.max(0, Number(document.getElementById('at_discount').value)||0);
+}
+
+function updateAtTeacherPreview(){
+  const box = document.getElementById('atTeacherCommissionPreview');
+  if(!box) return;
+  const baseAmount = currentAtTeacherBaseAmount();
+  const dType = currentAtTeacherDiscountType();
+  const dValue = currentAtTeacherDiscountValue();
+  const discountAmount = teacherDiscountAmount(baseAmount, dType, dValue);
+  const finalFee = baseAmount - discountAmount;
+  if(dValue>0){
+    const discountLabel = dType==='rm' ? `折扣 -RM${dValue}` : `折扣 ${dValue}%`;
+    box.innerHTML = `<div class="row"><span>原价手工费</span><span class="num">${fmt(baseAmount)}</span></div>
+      <div class="row"><span>${discountLabel}</span><span class="num">-${fmt(discountAmount)}</span></div>
+      <div class="row"><span>实收手工费</span><span class="num">${fmt(finalFee)}</span></div>`;
+  } else {
+    box.innerHTML = `<div class="row"><span>手工费</span><span class="num">${fmt(baseAmount)}</span></div>`;
+  }
+}
+
+function exitAtEditMode(){
+  editingTeacherRecordId = null;
+  document.getElementById('addAtTeacherRecordBtn').textContent = '记录入账';
+  document.getElementById('cancelAtEditBtn').style.display = 'none';
+}
+
+async function submitAtTeacherRecord(){
+  const errEl = document.getElementById('addAtTeacherRecordError');
+  errEl.textContent = '';
+  const ownerId = document.getElementById('at_owner').value;
+  const date = document.getElementById('at_date').value;
+  const catKey = document.getElementById('at_category').value;
+  const itemName = document.getElementById('at_item').value;
+  const client = document.getElementById('at_client').value.trim();
+  const dType = currentAtTeacherDiscountType();
+  const dValue = currentAtTeacherDiscountValue();
+  const qty = currentAtTeacherQty();
+  const note = document.getElementById('at_note').value.trim();
+  if(!ownerId){ errEl.textContent = '请先添加一位老师。'; return; }
+  if(!date){ errEl.textContent = '请填写日期。'; return; }
+  const found = teacherFindItem(catKey, itemName);
+  if(!found){ errEl.textContent = '请选择项目类别和具体部位。'; return; }
+
+  const baseAmount = found.item.fee * qty;
+  const discountAmount = teacherDiscountAmount(baseAmount, dType, dValue);
+  const finalFee = Math.round((baseAmount - discountAmount) * 100) / 100;
+  const rec = {
+    type:'teacher_service', date, client, note,
+    person_id: ownerId,
+    product_name: `${catKey}::${itemName}::${dType}::${dValue}::${qty}`, amount: finalFee
+  };
+  if(!editingTeacherRecordId){ rec.status = 'pending'; rec.created_by = currentProfile.id; }
+
+  let error;
+  if(editingTeacherRecordId){
+    ({ error } = await sb.from('records').update(rec).eq('id', editingTeacherRecordId));
+  } else {
+    ({ error } = await sb.from('records').insert(rec));
+  }
+  if(error){ errEl.textContent = '保存失败：'+error.message; return; }
+
+  const wasEditing = !!editingTeacherRecordId;
+  exitAtEditMode();
+  document.getElementById('at_client').value='';
+  document.getElementById('at_discount').value='';
+  document.getElementById('at_qty').value='1';
+  document.getElementById('at_note').value='';
+  const ym = date.slice(0,7);
+  if(document.getElementById('monthPicker').value!==ym){ document.getElementById('monthPicker').value=ym; }
+  await renderAll();
+}
+
+function startEditTeacherRecord(rec){
+  const ownerSel = document.getElementById('at_owner');
+  if(ownerSel){ ownerSel.value = rec.personId; }
+  document.getElementById('at_date').value = rec.date || '';
+  document.getElementById('at_client').value = rec.client || '';
+  document.getElementById('at_note').value = rec.note || '';
+
+  const parsed = teacherParseProductName(rec.productName);
+  document.getElementById('at_category').value = parsed.catKey;
+  renderAtTeacherItemSelect();
+  document.getElementById('at_item').value = parsed.itemName;
+  updateAtTeacherQtyVisibility();
+  document.getElementById('at_qty').value = parsed.qty || 1;
+  document.getElementById('at_discount_type').value = parsed.discountType;
+  document.getElementById('at_discount').value = parsed.discountValue || '';
+
+  editingTeacherRecordId = rec.id;
+  document.getElementById('addAtTeacherRecordBtn').textContent = '更新记录';
+  document.getElementById('cancelAtEditBtn').style.display = '';
+  updateAtTeacherPreview();
+  document.getElementById('adminSection').scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 function buildStatementText(personId){
@@ -1222,7 +1418,7 @@ function renderAdminRecordsTable(){
       <td>${escapeHtml(r.client||'—')}</td>
       <td class="num">${allocText}<div style="margin-top:4px;font-weight:600;">合计 ${fmt(total)}</div></td>
       <td><button class="pill ${r.status==='paid'?'paid':'pending'}" data-toggle="${r.id}">${r.status==='paid'?'已结算':'待结算'}</button>
-          ${r.type!=='teacher_service' ? `<button data-edit="${r.id}" style="margin-left:4px;">编辑</button>` : ''}
+          ${r.type==='teacher_service' ? `<button data-edit-teacher="${r.id}" style="margin-left:4px;">编辑</button>` : `<button data-edit="${r.id}" style="margin-left:4px;">编辑</button>`}
           <button data-del="${r.id}" style="margin-left:4px;">删除</button></td>
     </tr>`;
   }).join('') || '<tr><td colspan="6" class="empty">本月还没有记录</td></tr>';
@@ -1239,6 +1435,12 @@ function renderAdminRecordsTable(){
     btn.addEventListener('click', ()=>{
       const rec = records.find(r=>r.id===btn.getAttribute('data-edit'));
       if(rec) startEditRecord(rec);
+    });
+  });
+  body.querySelectorAll('[data-edit-teacher]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const rec = records.find(r=>r.id===btn.getAttribute('data-edit-teacher'));
+      if(rec) startEditTeacherRecord(rec);
     });
   });
   body.querySelectorAll('[data-del]').forEach(btn=>{
