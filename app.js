@@ -1,4 +1,4 @@
-const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+﻿const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 
 const fmt = n => 'RM ' + Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtPct = n => Number(n||0).toLocaleString('en-MY',{maximumFractionDigits:1}) + '%';
@@ -110,6 +110,7 @@ let antiAgingProducts = [];
 let antiagingOpItems = [];
 let settings = { reviewDefaultAmount:4 };
 let currentType = 'invite';
+let editingRecordId = null;
 
 function roleLabel(role){
   return role==='admin' ? '管理员' : role==='teacher' ? '技术老师' : '员工';
@@ -332,6 +333,7 @@ function buildStaffSection(){
   el.innerHTML = `
     <div class="panel">
       <h2>新增记录</h2>
+      ${currentProfile.role==='admin' ? `<div class="field"><label for="f_owner">记录归属人（可以帮团队补登）</label><select id="f_owner"></select></div>` : ''}
       <div class="type-tabs" id="typeTabs"></div>
       <div class="field"><label for="f_date">日期</label><input type="date" id="f_date" /></div>
 
@@ -370,7 +372,10 @@ function buildStaffSection(){
       <div class="preview-commission" id="commissionPreview"></div>
 
       <div class="field"><label for="f_note">备注</label><input type="text" id="f_note" placeholder="选填" /></div>
-      <button class="primary" id="addRecordBtn">记录入账</button>
+      <div style="display:flex;gap:8px;">
+        <button class="primary" id="addRecordBtn" style="width:100%;">记录入账</button>
+        <button id="cancelEditBtn" style="display:none;white-space:nowrap;">取消编辑</button>
+      </div>
       <p class="error-text" id="addRecordError"></p>
     </div>
   `;
@@ -380,11 +385,41 @@ function buildStaffSection(){
   applyFieldVisibility();
   renderProductSelect();
 
+  if(currentProfile.role==='admin'){
+    const ownerSel = document.getElementById('f_owner');
+    const eligible = people.filter(p=>p.active && p.role!=='teacher').slice().sort((a,b)=>a.name.localeCompare(b.name));
+    ownerSel.innerHTML = eligible.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+    ownerSel.value = currentProfile.id;
+    ownerSel.addEventListener('change', ()=>{ prefillAntiagingAmount(); updatePreview(); });
+  }
+
   document.getElementById('f_source').addEventListener('change', ()=>{ applyFieldVisibility(); updatePreview(); });
   document.getElementById('f_closed').addEventListener('change', ()=>{ applyFieldVisibility(); updatePreview(); });
   document.getElementById('f_product').addEventListener('change', ()=>{ prefillAntiagingAmount(); updatePreview(); });
   document.getElementById('f_amount').addEventListener('input', updatePreview);
   document.getElementById('addRecordBtn').addEventListener('click', submitRecord);
+  document.getElementById('cancelEditBtn').addEventListener('click', ()=>{
+    exitEditMode();
+    document.getElementById('f_client').value='';
+    document.getElementById('f_amount').value='';
+    document.getElementById('f_note').value='';
+    document.getElementById('f_closed').checked=false;
+    document.getElementById('f_date').value = new Date().toISOString().slice(0,10);
+    if(document.getElementById('f_owner')){ document.getElementById('f_owner').value = currentProfile.id; }
+    applyFieldVisibility();
+    updatePreview();
+  });
+}
+
+function currentOwnerId(){
+  const sel = document.getElementById('f_owner');
+  return (sel && sel.value) ? sel.value : currentProfile.id;
+}
+
+function exitEditMode(){
+  editingRecordId = null;
+  document.getElementById('addRecordBtn').textContent = '记录入账';
+  document.getElementById('cancelEditBtn').style.display = 'none';
 }
 
 function renderTypeTabs(){
@@ -408,7 +443,7 @@ function prefillAntiagingAmount(){
   if(val.startsWith(ANTIAGING_OPFEE_VALUE_PREFIX)){
     const itemName = val.slice(ANTIAGING_OPFEE_VALUE_PREFIX.length);
     const item = antiagingOpItems.find(i=>i.name===itemName);
-    suggested = item && item.rates ? Number(item.rates[currentProfile.id])||0 : 0;
+    suggested = item && item.rates ? Number(item.rates[currentOwnerId()])||0 : 0;
   } else if(val.startsWith(ANTIAGING_PRODUCT_VALUE_PREFIX)){
     const productName = val.slice(ANTIAGING_PRODUCT_VALUE_PREFIX.length);
     const product = antiAgingProducts.find(p=>p.name===productName);
@@ -458,15 +493,17 @@ function updatePreview(){
   if(currentType==='invite'){
     lines.push({label:'邀约费（不论是否成交）', val:20});
     if(document.getElementById('f_closed').checked){
+      const ownerId = currentOwnerId();
       const ym = document.getElementById('monthPicker').value;
-      const existing = records.filter(r=>r.type==='invite' && r.closed && r.personId===currentProfile.id && r.date.slice(0,7)===ym)
+      const existing = records.filter(r=>r.type==='invite' && r.closed && r.personId===ownerId && r.date.slice(0,7)===ym)
         .reduce((s,r)=>s+(Number(r.amount)||0),0);
       const tRate = tierRate(existing+amt, PERSONAL_AD_TIERS);
       lines.push({label:`面诊成交提成 ${fmtPct(tRate*100)}（按本人当月累计业绩阶梯）`, val: amt*tRate});
     }
   } else if(OP_TYPE_KEYS.includes(currentType)){
     const op = OP_TYPES.find(o=>o.key===currentType);
-    const fee = Number(currentProfile[op.field])||0;
+    const ownerProfile = people.find(p=>p.id===currentOwnerId());
+    const fee = Number(ownerProfile && ownerProfile[op.field])||0;
     lines.push({label:op.rateLabel, val: fee});
   } else if(currentType==='antiaging'){
     const val = document.getElementById('f_product').value;
@@ -510,45 +547,92 @@ async function submitRecord(){
   const note = document.getElementById('f_note').value.trim();
   if(!date){ errEl.textContent = '请填写日期。'; return; }
 
-  const rec = { type:currentType, date, client, note, status:'pending', created_by: currentProfile.id };
+  const ownerId = currentOwnerId();
+  const rec = { type:currentType, date, client, note };
+  if(!editingRecordId){ rec.status = 'pending'; rec.created_by = currentProfile.id; }
 
   if(currentType==='invite'){
-    rec.person_id = currentProfile.id;
+    rec.person_id = ownerId;
     rec.closed = document.getElementById('f_closed').checked;
     rec.amount = rec.closed ? (Number(document.getElementById('f_amount').value)||0) : 0;
     if(rec.closed && !rec.amount){ errEl.textContent = '已勾选「已成交」，请填写面诊成交业绩金额。'; return; }
   } else if(OP_TYPE_KEYS.includes(currentType)){
-    rec.person_id = currentProfile.id;
+    rec.person_id = ownerId;
   } else if(currentType==='antiaging'){
-    rec.person_id = currentProfile.id;
+    rec.person_id = ownerId;
     rec.product_name = document.getElementById('f_product').value;
     rec.amount = Number(document.getElementById('f_amount').value)||0;
     if(!rec.product_name || !rec.amount){ errEl.textContent = '请选择抗衰项目并填写金额。'; return; }
   } else if(currentType==='care'){
-    rec.person_id = currentProfile.id;
+    rec.person_id = ownerId;
     rec.amount = Number(document.getElementById('f_amount').value)||0;
     if(!rec.amount){ errEl.textContent = '请填写订单金额。'; return; }
   } else if(currentType==='review'){
-    rec.person_id = currentProfile.id;
+    rec.person_id = ownerId;
     rec.amount = settings.reviewDefaultAmount;
   } else if(currentType==='tattoo'){
     rec.source = document.getElementById('f_source').value;
     rec.amount = Number(document.getElementById('f_amount').value)||0;
     if(!rec.amount){ errEl.textContent = '请填写服务金额。'; return; }
-    if(rec.source==='self'){ rec.provider_id = currentProfile.id; }
-    else { rec.referrer_id = currentProfile.id; rec.director = document.getElementById('f_director').value.trim(); }
+    if(rec.source==='self'){ rec.provider_id = ownerId; }
+    else { rec.referrer_id = ownerId; rec.director = document.getElementById('f_director').value.trim(); }
   }
 
-  const { error } = await sb.from('records').insert(rec);
+  let error;
+  if(editingRecordId){
+    ({ error } = await sb.from('records').update(rec).eq('id', editingRecordId));
+  } else {
+    ({ error } = await sb.from('records').insert(rec));
+  }
   if(error){ errEl.textContent = '保存失败：'+error.message; return; }
+
+  const wasEditing = !!editingRecordId;
+  exitEditMode();
 
   document.getElementById('f_client').value='';
   document.getElementById('f_amount').value='';
   document.getElementById('f_note').value='';
   document.getElementById('f_closed').checked=false;
+  if(wasEditing && document.getElementById('f_owner')){ document.getElementById('f_owner').value = currentProfile.id; }
   const ym = date.slice(0,7);
   if(document.getElementById('monthPicker').value!==ym){ document.getElementById('monthPicker').value=ym; }
   await renderAll();
+}
+
+function startEditRecord(rec){
+  currentType = rec.type;
+  renderTypeTabs();
+  applyFieldVisibility();
+
+  document.getElementById('f_date').value = rec.date || '';
+  document.getElementById('f_client').value = rec.client || '';
+  document.getElementById('f_note').value = rec.note || '';
+  if(document.getElementById('f_owner')){
+    document.getElementById('f_owner').value = recordPrimaryPersonId(rec) || currentProfile.id;
+  }
+
+  if(rec.type==='invite'){
+    document.getElementById('f_closed').checked = !!rec.closed;
+    applyFieldVisibility();
+    if(rec.closed){ document.getElementById('f_amount').value = rec.amount || ''; }
+  } else if(rec.type==='antiaging'){
+    renderProductSelect();
+    document.getElementById('f_product').value = rec.productName || '';
+    document.getElementById('f_amount').value = rec.amount || '';
+  } else if(rec.type==='care'){
+    document.getElementById('f_amount').value = rec.amount || '';
+  } else if(rec.type==='tattoo'){
+    document.getElementById('f_source').value = rec.source || 'self';
+    applyFieldVisibility();
+    if(rec.source==='company'){ document.getElementById('f_director').value = rec.director || ''; }
+    document.getElementById('f_amount').value = rec.amount || '';
+  }
+
+  editingRecordId = rec.id;
+  document.getElementById('addRecordBtn').textContent = '更新记录';
+  document.getElementById('cancelEditBtn').style.display = '';
+  updatePreview();
+  document.getElementById('staffSection').scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 // ---------------- Teacher: new record form ----------------
@@ -1138,6 +1222,7 @@ function renderAdminRecordsTable(){
       <td>${escapeHtml(r.client||'—')}</td>
       <td class="num">${allocText}<div style="margin-top:4px;font-weight:600;">合计 ${fmt(total)}</div></td>
       <td><button class="pill ${r.status==='paid'?'paid':'pending'}" data-toggle="${r.id}">${r.status==='paid'?'已结算':'待结算'}</button>
+          ${r.type!=='teacher_service' ? `<button data-edit="${r.id}" style="margin-left:4px;">编辑</button>` : ''}
           <button data-del="${r.id}" style="margin-left:4px;">删除</button></td>
     </tr>`;
   }).join('') || '<tr><td colspan="6" class="empty">本月还没有记录</td></tr>';
@@ -1148,6 +1233,12 @@ function renderAdminRecordsTable(){
       const newStatus = rec.status==='paid'?'pending':'paid';
       await sb.from('records').update({status:newStatus}).eq('id', rec.id);
       await renderAll();
+    });
+  });
+  body.querySelectorAll('[data-edit]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const rec = records.find(r=>r.id===btn.getAttribute('data-edit'));
+      if(rec) startEditRecord(rec);
     });
   });
   body.querySelectorAll('[data-del]').forEach(btn=>{
