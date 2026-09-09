@@ -936,8 +936,7 @@ function renderPayrollReport(){
       <div class="row"><span>底薪</span><span class="num">${fmt(report.person.baseSalary)}</span></div>
       <div class="row"><span>KPI奖金（达标率 ${report.kpiPct}%）</span><span class="num">${fmt(report.kpiAmount)}</span></div>
       <div class="row"><span>津贴</span><span class="num">${fmt(report.person.allowance)}</span></div>
-      <div class="row"><span>个人sales</span><span class="num">${fmt(report.personalSales)}</span></div>
-      <div class="row"><span>手工服务</span><span class="num">${fmt(report.handsOn)}</span></div>
+      <div class="row"><span>个人提成合计（sales + 手工服务）</span><span class="num">${fmt(report.personalSales + report.handsOn)}</span></div>
       <div class="row"><span>Bonus合计</span><span class="num">${fmt(report.bonusTotal)}</span></div>
     </div>
     <div class="summary-strip"><div class="stat total"><p class="label">本月合计</p><p class="value num">${fmt(report.total)}</p></div></div>
