@@ -103,6 +103,20 @@ function tierRate(amount, tiers){
   return tiers[tiers.length-1].rate;
 }
 
+const PERSONAL_SALES_TYPES = ['invite','tattoo','review','care'];
+const HANDS_ON_TYPES = ['facial','lash','icepoint','antiaging'];
+
+function kpiTierAmount(person, pct){
+  const p = Number(pct)||0;
+  if(p>=95) return Number(person.kpiTier1)||0;
+  if(p>=80) return Number(person.kpiTier2)||0;
+  if(p>=70) return Number(person.kpiTier3)||0;
+  return 0;
+}
+function kpiMaxAmount(person){
+  return Number(person.kpiTier1)||0;
+}
+
 let currentProfile = null;
 let people = [];
 let records = [];
@@ -112,6 +126,8 @@ let settings = { reviewDefaultAmount:4 };
 let currentType = 'invite';
 let editingRecordId = null;
 let editingTeacherRecordId = null;
+let payrollMonthly = {};
+let bonusItems = [];
 
 function roleLabel(role){
   return role==='admin' ? '管理员' : role==='teacher' ? '技术老师' : '员工';
@@ -271,7 +287,9 @@ async function bootApp(){
 }
 
 function mapProfile(row){
-  return { id:row.id, name:row.name, role:row.role, facialRate:row.facial_rate, lashRate:row.lash_rate, icepointRate:row.icepoint_rate, active: row.active!==false };
+  return { id:row.id, name:row.name, role:row.role, facialRate:row.facial_rate, lashRate:row.lash_rate, icepointRate:row.icepoint_rate, active: row.active!==false,
+    baseSalary: Number(row.base_salary)||0, allowance: Number(row.allowance)||0,
+    kpiTier1: Number(row.kpi_tier1)||0, kpiTier2: Number(row.kpi_tier2)||0, kpiTier3: Number(row.kpi_tier3)||0 };
 }
 function mapRecord(row){
   return {
@@ -307,19 +325,63 @@ async function loadRecordsForMonth(){
   records = (data||[]).map(mapRecord);
 }
 
+async function loadPayrollForMonth(){
+  const ym = document.getElementById('monthPicker').value;
+  const [{data:kpiRows}, {data:bonusRows}] = await Promise.all([
+    sb.from('payroll_monthly').select('*').eq('ym', ym),
+    sb.from('bonus_items').select('*').eq('ym', ym)
+  ]);
+  payrollMonthly = {};
+  (kpiRows||[]).forEach(r=>{ payrollMonthly[r.person_id] = { id:r.id, kpiPct: Number(r.kpi_pct)||0 }; });
+  bonusItems = (bonusRows||[]).map(r=>({ id:r.id, personId:r.person_id, ym:r.ym, label:r.label, amount:Number(r.amount)||0 }));
+}
+
+function personTypeTotal(personId, typeList){
+  const person = people.find(p=>p.id===personId);
+  if(!person) return 0;
+  const adRatesRaw = personalAdTotals(records);
+  const adRateByPerson = {};
+  Object.keys(adRatesRaw).forEach(id=>{ adRateByPerson[id] = tierRate(adRatesRaw[id], PERSONAL_AD_TIERS); });
+  let total = 0;
+  records.filter(r=>typeList.includes(r.type)).forEach(r=>{
+    allocationsFor(r, adRateByPerson).forEach(a=>{
+      if(a.who===person.name) total += a.amount;
+    });
+  });
+  return total;
+}
+
+function computePayrollReport(personId){
+  const person = people.find(p=>p.id===personId);
+  if(!person) return null;
+  const kpiPct = (payrollMonthly[personId] && payrollMonthly[personId].kpiPct) || 0;
+  const kpiAmount = kpiTierAmount(person, kpiPct);
+  const kpiMax = kpiMaxAmount(person);
+  const personalSales = personTypeTotal(personId, PERSONAL_SALES_TYPES);
+  const handsOn = personTypeTotal(personId, HANDS_ON_TYPES);
+  const myBonusItems = bonusItems.filter(b=>b.personId===personId);
+  const bonusTotal = myBonusItems.reduce((s,b)=>s+b.amount,0);
+  const total = (person.baseSalary||0) + kpiAmount + (person.allowance||0) + personalSales + handsOn + bonusTotal;
+  const kpiGap = Math.max(0, kpiMax - kpiAmount);
+  return { person, kpiPct, kpiAmount, kpiMax, personalSales, handsOn, bonusItems: myBonusItems, bonusTotal, total, kpiGap };
+}
+
 async function renderAll(){
   try{
     await loadRecordsForMonth();
+    await loadPayrollForMonth();
     if(currentProfile.role==='teacher'){
       updateTeacherPreview();
       renderMyTeacherRecords();
     } else {
       updatePreview();
       renderMyRecords();
+      renderPayrollReport();
     }
     if(currentProfile.role==='admin'){
       renderAdminSummary();
       renderAdminRecordsTable();
+      renderPayrollAdminPanel();
     }
   }catch(e){
     console.error('renderAll failed:', e);
@@ -854,6 +916,37 @@ function renderMyRecords(){
   `;
 }
 
+// ---------------- Staff: monthly payroll report ----------------
+function renderPayrollReport(){
+  const report = computePayrollReport(currentProfile.id);
+  if(!report) return;
+  const el = document.getElementById('staffSection');
+  let wrap = document.getElementById('payrollReportPanel');
+  if(!wrap){
+    wrap = document.createElement('div');
+    wrap.id = 'payrollReportPanel';
+    wrap.className = 'panel';
+    el.appendChild(wrap);
+  }
+  const bonusRows = report.bonusItems.map(b=>`<div class="row"><span>${escapeHtml(b.label||'Bonus')}</span><span class="num">${fmt(b.amount)}</span></div>`).join('')
+    || '<div class="row"><span>本月还没有Bonus项目</span><span class="num">—</span></div>';
+  wrap.innerHTML = `
+    <h2>本月工资报告</h2>
+    <div class="preview-commission">
+      <div class="row"><span>底薪</span><span class="num">${fmt(report.person.baseSalary)}</span></div>
+      <div class="row"><span>KPI奖金（达标率 ${report.kpiPct}%）</span><span class="num">${fmt(report.kpiAmount)}</span></div>
+      <div class="row"><span>津贴</span><span class="num">${fmt(report.person.allowance)}</span></div>
+      <div class="row"><span>个人sales</span><span class="num">${fmt(report.personalSales)}</span></div>
+      <div class="row"><span>手工服务</span><span class="num">${fmt(report.handsOn)}</span></div>
+      <div class="row"><span>Bonus合计</span><span class="num">${fmt(report.bonusTotal)}</span></div>
+    </div>
+    <div class="summary-strip"><div class="stat total"><p class="label">本月合计</p><p class="value num">${fmt(report.total)}</p></div></div>
+    <p style="font-weight:600;font-size:13px;margin:0 0 8px;">Bonus 明细</p>
+    <div class="preview-commission" style="margin-bottom:14px;">${bonusRows}</div>
+    ${report.kpiGap>0 ? `<p class="hint" style="color:var(--warning);">KPI还差 ${fmt(report.kpiGap)} 就能拿满档（达到95%以上）。</p>` : ''}
+  `;
+}
+
 // ---------------- Admin ----------------
 function buildAdminSection(){
   const el = document.getElementById('adminSection');
@@ -873,6 +966,26 @@ function buildAdminSection(){
       </div>
       <p class="hint">新人第一次登录用这个初始PIN，之后可以自己改。</p>
       <p class="error-text" id="addPersonError"></p>
+    </div>
+    <div class="panel">
+      <h2>薪资设置（底薪 / 津贴 / KPI 三档）</h2>
+      <p class="hint" style="margin:0 0 10px;">「本月达标率%」是每个月你自己打分输入的，系统会照下面三档金额自动换算成KPI奖金。</p>
+      <div class="table-scroll"><table>
+        <thead><tr><th>姓名</th><th class="num">底薪</th><th class="num">津贴</th><th class="num">KPI ≥95%</th><th class="num">KPI 80-94%</th><th class="num">KPI 70-79%</th><th class="num">本月达标率%</th></tr></thead>
+        <tbody id="payrollSettingsBody"></tbody>
+      </table></div>
+    </div>
+    <div class="panel">
+      <h2>Bonus 明细管理</h2>
+      <p class="hint" style="margin:0 0 10px;">专场业绩这些手动加进来，员工自己会在「本月工资报告」看到这个明细。</p>
+      <div class="add-row">
+        <select id="bonusPerson"></select>
+        <input type="text" id="bonusLabel" placeholder="项目名称，例：8月祛斑专场" style="width:220px;" />
+        <input type="number" id="bonusAmount" placeholder="金额 RM" style="width:110px;" />
+        <button id="addBonusBtn">添加</button>
+      </div>
+      <p class="error-text" id="addBonusError"></p>
+      <div id="bonusItemsWrap" style="margin-top:12px;"></div>
     </div>
     <div class="panel">
       <h2>老师手工费补登 / 编辑</h2>
@@ -959,11 +1072,13 @@ function buildAdminSection(){
   renderAntiProducts();
   renderAntiOpItems();
   buildAdminTeacherPanel();
+  renderPayrollAdminPanel();
   document.getElementById('reviewDefaultInput').value = settings.reviewDefaultAmount;
 
   document.getElementById('addPersonBtn').addEventListener('click', addPerson);
   document.getElementById('addProductBtn').addEventListener('click', addProduct);
   document.getElementById('addOpItemBtn').addEventListener('click', addOpItem);
+  document.getElementById('addBonusBtn').addEventListener('click', addBonusItem);
   document.getElementById('adminRecordsPersonFilter').addEventListener('change', renderAdminRecordsTable);
   document.getElementById('reviewDefaultInput').addEventListener('input', async (e)=>{
     settings.reviewDefaultAmount = Number(e.target.value)||4;
@@ -1186,6 +1301,97 @@ function renderStatementPersonSelect(){
   const sorted = people.filter(p=>p.active).slice().sort((a,b)=>a.name.localeCompare(b.name));
   sel.innerHTML = sorted.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
   if(sorted.some(p=>p.id===prevVal)) sel.value = prevVal;
+}
+
+// ---------------- Admin: payroll settings + bonus items ----------------
+function renderPayrollAdminPanel(){
+  const body = document.getElementById('payrollSettingsBody');
+  if(!body) return;
+  const eligible = people.filter(p=>p.active && p.role!=='teacher').slice().sort((a,b)=>a.name.localeCompare(b.name));
+  body.innerHTML = eligible.map(p=>{
+    const pct = (payrollMonthly[p.id] && payrollMonthly[p.id].kpiPct) || 0;
+    return `<tr>
+      <td>${escapeHtml(p.name)}</td>
+      <td class="num"><input type="number" class="num" min="0" step="1" value="${p.baseSalary||0}" data-payroll-field="base_salary" data-person="${p.id}" style="width:90px;" /></td>
+      <td class="num"><input type="number" class="num" min="0" step="1" value="${p.allowance||0}" data-payroll-field="allowance" data-person="${p.id}" style="width:80px;" /></td>
+      <td class="num"><input type="number" class="num" min="0" step="1" value="${p.kpiTier1||0}" data-payroll-field="kpi_tier1" data-person="${p.id}" style="width:80px;" /></td>
+      <td class="num"><input type="number" class="num" min="0" step="1" value="${p.kpiTier2||0}" data-payroll-field="kpi_tier2" data-person="${p.id}" style="width:80px;" /></td>
+      <td class="num"><input type="number" class="num" min="0" step="1" value="${p.kpiTier3||0}" data-payroll-field="kpi_tier3" data-person="${p.id}" style="width:80px;" /></td>
+      <td class="num"><input type="number" class="num" min="0" max="100" step="1" value="${pct}" data-kpi-pct="${p.id}" style="width:70px;" /></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="7" class="empty">还没有人员</td></tr>';
+
+  body.querySelectorAll('[data-payroll-field]').forEach(inp=>{
+    inp.addEventListener('change', async ()=>{
+      const personId = inp.getAttribute('data-person');
+      const field = inp.getAttribute('data-payroll-field');
+      const val = Number(inp.value)||0;
+      const person = people.find(p=>p.id===personId);
+      if(person){
+        const camel = field.replace(/_([a-z])/g,(m,c)=>c.toUpperCase());
+        person[camel] = val;
+      }
+      await sb.from('profiles').update({[field]: val}).eq('id', personId);
+      renderPayrollReport();
+    });
+  });
+  body.querySelectorAll('[data-kpi-pct]').forEach(inp=>{
+    inp.addEventListener('change', async ()=>{
+      const personId = inp.getAttribute('data-kpi-pct');
+      const ym = document.getElementById('monthPicker').value;
+      const val = Math.min(100, Math.max(0, Number(inp.value)||0));
+      await sb.from('payroll_monthly').upsert({ person_id:personId, ym, kpi_pct:val }, { onConflict:'person_id,ym' });
+      payrollMonthly[personId] = { ...(payrollMonthly[personId]||{}), kpiPct: val };
+      renderPayrollReport();
+    });
+  });
+
+  const bonusSel = document.getElementById('bonusPerson');
+  if(bonusSel){
+    const prevVal = bonusSel.value;
+    bonusSel.innerHTML = eligible.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+    if(eligible.some(p=>p.id===prevVal)) bonusSel.value = prevVal;
+  }
+
+  renderBonusItemsWrap();
+}
+
+function renderBonusItemsWrap(){
+  const wrap = document.getElementById('bonusItemsWrap');
+  if(!wrap) return;
+  if(bonusItems.length===0){ wrap.innerHTML = '<p class="empty">本月还没有Bonus项目</p>'; return; }
+  wrap.innerHTML = bonusItems.map(b=>{
+    const person = people.find(p=>p.id===b.personId);
+    return `<div class="roster-chip" style="margin-bottom:8px;">${escapeHtml(person?person.name:'未知')} · ${escapeHtml(b.label||'Bonus')} <b class="num" style="margin-left:4px;">${fmt(b.amount)}</b>
+      <button class="del" data-del-bonus="${b.id}" aria-label="删除">✕</button>
+    </div>`;
+  }).join('');
+  wrap.querySelectorAll('[data-del-bonus]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      await sb.from('bonus_items').delete().eq('id', btn.getAttribute('data-del-bonus'));
+      await loadPayrollForMonth();
+      renderBonusItemsWrap();
+      renderPayrollReport();
+    });
+  });
+}
+
+async function addBonusItem(){
+  const errEl = document.getElementById('addBonusError');
+  errEl.textContent = '';
+  const personId = document.getElementById('bonusPerson').value;
+  const label = document.getElementById('bonusLabel').value.trim();
+  const amount = Number(document.getElementById('bonusAmount').value)||0;
+  const ym = document.getElementById('monthPicker').value;
+  if(!personId){ errEl.textContent = '请选择人员。'; return; }
+  if(!label || !amount){ errEl.textContent = '请填写项目名称和金额。'; return; }
+  const { error } = await sb.from('bonus_items').insert({ person_id:personId, ym, label, amount });
+  if(error){ errEl.textContent = '保存失败：'+error.message; return; }
+  document.getElementById('bonusLabel').value = '';
+  document.getElementById('bonusAmount').value = '';
+  await loadPayrollForMonth();
+  renderBonusItemsWrap();
+  renderPayrollReport();
 }
 
 function renderRoster(){
