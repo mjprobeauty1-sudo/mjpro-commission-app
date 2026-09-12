@@ -951,7 +951,7 @@ function renderPayrollReport(){
       <div class="row"><span>Bonus合计</span><span class="num">${fmt(report.bonusTotal)}</span></div>
     </div>
     <div class="summary-strip"><div class="stat total"><p class="label">本月合计</p><p class="value num">${fmt(report.total)}</p></div></div>
-    <p style="font-weight:600;font-size:13px;margin:0 0 8px;">Bonus 明细</p>
+    <p style="font-weight:600;font-size:13px;margin:0 0 8px;">Group Sales Bonus</p>
     <div class="preview-commission" style="margin-bottom:14px;">${bonusRows}</div>
     ${report.kpiGap>0 ? `<p class="hint" style="color:var(--warning);">KPI还差 ${fmt(report.kpiGap)} 就能拿满档（达到95%以上）。</p>` : ''}
     ${report.targetBonusGap>0 ? `<p class="hint" style="color:var(--warning);">邀约业绩还差 ${fmt(report.targetThreshold-report.closedInviteTotal)} 就能拿满 ${fmt(report.targetPool)} 的达标bonus。</p>` : ''}
@@ -988,7 +988,7 @@ function buildAdminSection(){
       <p class="hint" style="margin-top:8px;">「达标bonus」是照这个人当月邀约已成交业绩，除以「达标业绩门槛」算完成率（封顶100%），再乘以「达标bonus封顶」自动算出来的，不用手动输入。</p>
     </div>
     <div class="panel">
-      <h2>Bonus 明细管理</h2>
+      <h2>Group Sales Bonus 管理</h2>
       <p class="hint" style="margin:0 0 10px;">专场业绩这些手动加进来，员工自己会在「本月工资报告」看到这个明细。</p>
       <div class="add-row">
         <select id="bonusPerson"></select>
