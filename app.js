@@ -963,9 +963,10 @@ function renderPayrollReport(){
       <div class="row"><span>达标bonus（邀约业绩 ${fmt(report.closedInviteTotal)} / ${fmt(report.targetThreshold)}）</span><span class="num">${fmt(report.targetBonusAmount)}</span></div>
       <div class="row"><span>Group Sales Bonus 合计</span><span class="num">${fmt(report.bonusTotal)}</span></div>
     </div>
-    ${report.kpiGap>0 || report.targetBonusGap>0 ? `<div style="margin-bottom:16px;">
-      ${report.kpiGap>0 ? `<p class="hint" style="color:var(--warning);">KPI还差 ${fmt(report.kpiGap)} 就能拿满档（达到95%以上）。</p>` : ''}
-      ${report.targetBonusGap>0 ? `<p class="hint" style="color:var(--warning);">邀约业绩还差 ${fmt(report.targetThreshold-report.closedInviteTotal)} 就能拿满 ${fmt(report.targetPool)} 的达标bonus。</p>` : ''}
+    ${report.kpiGap>0 || report.targetBonusGap>0 ? `<div style="background:var(--warning-soft);border:1px solid var(--warning);border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+      <p style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--warning);font-weight:600;margin:0 0 8px;">⚠️ 还差一点就能拿满</p>
+      ${report.kpiGap>0 ? `<p style="font-size:13px;color:var(--warning);margin:0 0 4px;font-weight:500;">KPI还差 <b class="num">${fmt(report.kpiGap)}</b> 就能拿满档（达到95%以上）</p>` : ''}
+      ${report.targetBonusGap>0 ? `<p style="font-size:13px;color:var(--warning);margin:0;font-weight:500;">邀约业绩还差 <b class="num">${fmt(report.targetThreshold-report.closedInviteTotal)}</b> 就能拿满 ${fmt(report.targetPool)} 的达标bonus</p>` : ''}
     </div>` : ''}
 
     <div class="summary-strip"><div class="stat total"><p class="label">本月合计</p><p class="value num">${fmt(report.total)}</p></div></div>
