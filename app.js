@@ -941,38 +941,41 @@ function renderPayrollReport(){
     wrap.className = 'panel';
     el.appendChild(wrap);
   }
-  const bonusRows = report.bonusItems.map(b=>`<div class="row"><span>${escapeHtml(b.label||'Bonus')}</span><span class="num">${fmt(b.amount)}</span></div>`).join('')
-    || '<div class="row"><span>本月还没有Bonus项目</span><span class="num">—</span></div>';
-  const sectionLabel = text => `<p style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);font-weight:600;margin:0 0 8px;">${text}</p>`;
+  const sectionLabel = text => `<p style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);font-weight:600;margin:0 0 10px;padding-left:10px;border-left:3px solid var(--accent);">${text}</p>`;
+  const plainCard = rows => `<div style="background:var(--paper-raised);border:1px solid var(--line);border-radius:10px;padding:4px 14px;margin-bottom:24px;">${rows}</div>`;
+  const row = (label, val) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);gap:12px;"><span style="font-size:13px;">${label}</span><span class="num" style="font-weight:600;">${fmt(val)}</span></div>`;
+  const rowNoBorder = (label, val) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;gap:12px;"><span style="font-size:13px;">${label}</span><span class="num" style="font-weight:600;">${fmt(val)}</span></div>`;
+  const bonusRowsList = report.bonusItems.length
+    ? report.bonusItems.map((b,i)=> i<report.bonusItems.length-1 ? row(escapeHtml(b.label||'Bonus'), b.amount) : rowNoBorder(escapeHtml(b.label||'Bonus'), b.amount)).join('')
+    : `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;gap:12px;"><span style="font-size:13px;">本月还没有Bonus项目</span><span class="num" style="font-weight:600;">—</span></div>`;
+
   wrap.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:20px;">
       <h2 style="margin:0;">本月工资报告</h2>
       ${currentPayday ? `<span class="pill paid">发薪日期 ${currentPayday}</span>` : ''}
     </div>
 
     ${sectionLabel('固定项目')}
-    <div class="preview-commission" style="margin-bottom:16px;">
-      <div class="row"><span>底薪</span><span class="num">${fmt(report.person.baseSalary)}</span></div>
-      <div class="row"><span>津贴</span><span class="num">${fmt(report.person.allowance)}</span></div>
-    </div>
+    ${plainCard(row('底薪', report.person.baseSalary) + rowNoBorder('津贴', report.person.allowance))}
 
     ${sectionLabel('绩效与提成')}
-    <div class="preview-commission" style="margin-bottom:16px;">
-      <div class="row"><span>KPI奖金（达标率 ${report.kpiPct}%）</span><span class="num">${fmt(report.kpiAmount)}</span></div>
-      <div class="row"><span>个人提成合计（sales + 手工服务）</span><span class="num">${fmt(report.personalSales + report.handsOn)}</span></div>
-      <div class="row"><span>达标bonus（邀约业绩 ${fmt(report.closedInviteTotal)} / ${fmt(report.targetThreshold)}）</span><span class="num">${fmt(report.targetBonusAmount)}</span></div>
-      <div class="row"><span>Group Sales Bonus 合计</span><span class="num">${fmt(report.bonusTotal)}</span></div>
-    </div>
-    ${report.kpiGap>0 || report.targetBonusGap>0 ? `<div style="background:var(--warning-soft);border:1px solid var(--warning);border-radius:10px;padding:14px 16px;margin-bottom:16px;">
-      <p style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--warning);font-weight:600;margin:0 0 8px;">⚠️ 还差一点就能拿满</p>
-      ${report.kpiGap>0 ? `<p style="font-size:13px;color:var(--warning);margin:0 0 4px;font-weight:500;">KPI还差 <b class="num">${fmt(report.kpiGap)}</b> 就能拿满档（达到95%以上）</p>` : ''}
-      ${report.targetBonusGap>0 ? `<p style="font-size:13px;color:var(--warning);margin:0;font-weight:500;">邀约业绩还差 <b class="num">${fmt(report.targetThreshold-report.closedInviteTotal)}</b> 就能拿满 ${fmt(report.targetPool)} 的达标bonus</p>` : ''}
+    ${plainCard(
+      row(`KPI奖金（达标率 ${report.kpiPct}%）`, report.kpiAmount) +
+      row('个人提成合计（sales + 手工服务）', report.personalSales + report.handsOn) +
+      row(`达标bonus（邀约业绩 ${fmt(report.closedInviteTotal)} / ${fmt(report.targetThreshold)}）`, report.targetBonusAmount) +
+      rowNoBorder('Group Sales Bonus 合计', report.bonusTotal)
+    )}
+
+    <div class="summary-strip" style="margin-bottom:20px;"><div class="stat total"><p class="label">本月合计</p><p class="value num">${fmt(report.total)}</p></div></div>
+
+    ${report.kpiGap>0 || report.targetBonusGap>0 ? `<div style="border-left:3px solid var(--warning);background:var(--warning-soft);border-radius:0 10px 10px 0;padding:12px 16px;margin-bottom:24px;">
+      <p style="font-size:12px;color:var(--warning);font-weight:600;margin:0 0 6px;">⚠️ 还差一点就能拿满</p>
+      ${report.kpiGap>0 ? `<p style="font-size:13px;color:var(--warning);margin:0 0 4px;">KPI还差 <b class="num">${fmt(report.kpiGap)}</b> 就能拿满档（达到95%以上）</p>` : ''}
+      ${report.targetBonusGap>0 ? `<p style="font-size:13px;color:var(--warning);margin:0;">邀约业绩还差 <b class="num">${fmt(report.targetThreshold-report.closedInviteTotal)}</b> 就能拿满 ${fmt(report.targetPool)} 的达标bonus</p>` : ''}
     </div>` : ''}
 
-    <div class="summary-strip"><div class="stat total"><p class="label">本月合计</p><p class="value num">${fmt(report.total)}</p></div></div>
-
     ${sectionLabel('Group Sales Bonus 明细')}
-    <div class="preview-commission">${bonusRows}</div>
+    ${plainCard(bonusRowsList)}
   `;
 }
 
