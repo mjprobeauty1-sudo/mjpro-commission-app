@@ -289,7 +289,9 @@ async function bootApp(){
 function mapProfile(row){
   return { id:row.id, name:row.name, role:row.role, facialRate:row.facial_rate, lashRate:row.lash_rate, icepointRate:row.icepoint_rate, active: row.active!==false,
     baseSalary: Number(row.base_salary)||0, allowance: Number(row.allowance)||0,
-    kpiTier1: Number(row.kpi_tier1)||0, kpiTier2: Number(row.kpi_tier2)||0, kpiTier3: Number(row.kpi_tier3)||0 };
+    kpiTier1: Number(row.kpi_tier1)||0, kpiTier2: Number(row.kpi_tier2)||0, kpiTier3: Number(row.kpi_tier3)||0,
+    targetBonusPool: row.target_bonus_pool==null ? 1500 : Number(row.target_bonus_pool),
+    targetBonusThreshold: row.target_bonus_threshold==null ? 60000 : Number(row.target_bonus_threshold) };
 }
 function mapRecord(row){
   return {
@@ -359,11 +361,19 @@ function computePayrollReport(personId){
   const kpiMax = kpiMaxAmount(person);
   const personalSales = personTypeTotal(personId, PERSONAL_SALES_TYPES);
   const handsOn = personTypeTotal(personId, HANDS_ON_TYPES);
+  const adTotals = personalAdTotals(records);
+  const closedInviteTotal = adTotals[personId] || 0;
+  const targetThreshold = Number(person.targetBonusThreshold)||0;
+  const targetPool = Number(person.targetBonusPool)||0;
+  const targetPct = targetThreshold>0 ? Math.min(1, closedInviteTotal/targetThreshold) : 0;
+  const targetBonusAmount = Math.round(targetPool*targetPct*100)/100;
+  const targetBonusGap = Math.max(0, targetPool - targetBonusAmount);
   const myBonusItems = bonusItems.filter(b=>b.personId===personId);
   const bonusTotal = myBonusItems.reduce((s,b)=>s+b.amount,0);
-  const total = (person.baseSalary||0) + kpiAmount + (person.allowance||0) + personalSales + handsOn + bonusTotal;
+  const total = (person.baseSalary||0) + kpiAmount + (person.allowance||0) + personalSales + handsOn + bonusTotal + targetBonusAmount;
   const kpiGap = Math.max(0, kpiMax - kpiAmount);
-  return { person, kpiPct, kpiAmount, kpiMax, personalSales, handsOn, bonusItems: myBonusItems, bonusTotal, total, kpiGap };
+  return { person, kpiPct, kpiAmount, kpiMax, personalSales, handsOn, bonusItems: myBonusItems, bonusTotal,
+    closedInviteTotal, targetThreshold, targetPool, targetBonusAmount, targetBonusGap, total, kpiGap };
 }
 
 async function renderAll(){
@@ -937,12 +947,14 @@ function renderPayrollReport(){
       <div class="row"><span>KPI奖金（达标率 ${report.kpiPct}%）</span><span class="num">${fmt(report.kpiAmount)}</span></div>
       <div class="row"><span>津贴</span><span class="num">${fmt(report.person.allowance)}</span></div>
       <div class="row"><span>个人提成合计（sales + 手工服务）</span><span class="num">${fmt(report.personalSales + report.handsOn)}</span></div>
+      <div class="row"><span>达标bonus（邀约业绩 ${fmt(report.closedInviteTotal)} / ${fmt(report.targetThreshold)}）</span><span class="num">${fmt(report.targetBonusAmount)}</span></div>
       <div class="row"><span>Bonus合计</span><span class="num">${fmt(report.bonusTotal)}</span></div>
     </div>
     <div class="summary-strip"><div class="stat total"><p class="label">本月合计</p><p class="value num">${fmt(report.total)}</p></div></div>
     <p style="font-weight:600;font-size:13px;margin:0 0 8px;">Bonus 明细</p>
     <div class="preview-commission" style="margin-bottom:14px;">${bonusRows}</div>
     ${report.kpiGap>0 ? `<p class="hint" style="color:var(--warning);">KPI还差 ${fmt(report.kpiGap)} 就能拿满档（达到95%以上）。</p>` : ''}
+    ${report.targetBonusGap>0 ? `<p class="hint" style="color:var(--warning);">邀约业绩还差 ${fmt(report.targetThreshold-report.closedInviteTotal)} 就能拿满 ${fmt(report.targetPool)} 的达标bonus。</p>` : ''}
   `;
 }
 
@@ -970,9 +982,10 @@ function buildAdminSection(){
       <h2>薪资设置（底薪 / 津贴 / KPI 三档）</h2>
       <p class="hint" style="margin:0 0 10px;">「本月达标率%」是每个月你自己打分输入的，系统会照下面三档金额自动换算成KPI奖金。</p>
       <div class="table-scroll"><table>
-        <thead><tr><th>姓名</th><th class="num">底薪</th><th class="num">津贴</th><th class="num">KPI ≥95%</th><th class="num">KPI 80-94%</th><th class="num">KPI 70-79%</th><th class="num">本月达标率%</th></tr></thead>
+        <thead><tr><th>姓名</th><th class="num">底薪</th><th class="num">津贴</th><th class="num">KPI ≥95%</th><th class="num">KPI 80-94%</th><th class="num">KPI 70-79%</th><th class="num">本月达标率%</th><th class="num">达标bonus封顶</th><th class="num">达标业绩门槛</th></tr></thead>
         <tbody id="payrollSettingsBody"></tbody>
       </table></div>
+      <p class="hint" style="margin-top:8px;">「达标bonus」是照这个人当月邀约已成交业绩，除以「达标业绩门槛」算完成率（封顶100%），再乘以「达标bonus封顶」自动算出来的，不用手动输入。</p>
     </div>
     <div class="panel">
       <h2>Bonus 明细管理</h2>
@@ -1317,8 +1330,10 @@ function renderPayrollAdminPanel(){
       <td class="num"><input type="number" class="num" min="0" step="1" value="${p.kpiTier2||0}" data-payroll-field="kpi_tier2" data-person="${p.id}" style="width:80px;" /></td>
       <td class="num"><input type="number" class="num" min="0" step="1" value="${p.kpiTier3||0}" data-payroll-field="kpi_tier3" data-person="${p.id}" style="width:80px;" /></td>
       <td class="num"><input type="number" class="num" min="0" max="100" step="1" value="${pct}" data-kpi-pct="${p.id}" style="width:70px;" /></td>
+      <td class="num"><input type="number" class="num" min="0" step="1" value="${p.targetBonusPool||0}" data-payroll-field="target_bonus_pool" data-person="${p.id}" style="width:90px;" /></td>
+      <td class="num"><input type="number" class="num" min="0" step="1" value="${p.targetBonusThreshold||0}" data-payroll-field="target_bonus_threshold" data-person="${p.id}" style="width:100px;" /></td>
     </tr>`;
-  }).join('') || '<tr><td colspan="7" class="empty">还没有人员</td></tr>';
+  }).join('') || '<tr><td colspan="9" class="empty">还没有人员</td></tr>';
 
   body.querySelectorAll('[data-payroll-field]').forEach(inp=>{
     inp.addEventListener('change', async ()=>{
