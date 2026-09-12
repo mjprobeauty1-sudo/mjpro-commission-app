@@ -128,6 +128,7 @@ let editingRecordId = null;
 let editingTeacherRecordId = null;
 let payrollMonthly = {};
 let bonusItems = [];
+let currentPayday = null;
 
 function roleLabel(role){
   return role==='admin' ? '管理员' : role==='teacher' ? '技术老师' : '员工';
@@ -329,13 +330,15 @@ async function loadRecordsForMonth(){
 
 async function loadPayrollForMonth(){
   const ym = document.getElementById('monthPicker').value;
-  const [{data:kpiRows}, {data:bonusRows}] = await Promise.all([
+  const [{data:kpiRows}, {data:bonusRows}, {data:paydayRow}] = await Promise.all([
     sb.from('payroll_monthly').select('*').eq('ym', ym),
-    sb.from('bonus_items').select('*').eq('ym', ym)
+    sb.from('bonus_items').select('*').eq('ym', ym),
+    sb.from('payday_settings').select('*').eq('ym', ym).maybeSingle()
   ]);
   payrollMonthly = {};
   (kpiRows||[]).forEach(r=>{ payrollMonthly[r.person_id] = { id:r.id, kpiPct: Number(r.kpi_pct)||0 }; });
   bonusItems = (bonusRows||[]).map(r=>({ id:r.id, personId:r.person_id, ym:r.ym, label:r.label, amount:Number(r.amount)||0 }));
+  currentPayday = (paydayRow && paydayRow.payday_date) || null;
 }
 
 function personTypeTotal(personId, typeList){
@@ -940,21 +943,35 @@ function renderPayrollReport(){
   }
   const bonusRows = report.bonusItems.map(b=>`<div class="row"><span>${escapeHtml(b.label||'Bonus')}</span><span class="num">${fmt(b.amount)}</span></div>`).join('')
     || '<div class="row"><span>本月还没有Bonus项目</span><span class="num">—</span></div>';
+  const sectionLabel = text => `<p style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);font-weight:600;margin:0 0 8px;">${text}</p>`;
   wrap.innerHTML = `
-    <h2>本月工资报告</h2>
-    <div class="preview-commission">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+      <h2 style="margin:0;">本月工资报告</h2>
+      ${currentPayday ? `<span class="pill paid">发薪日期 ${currentPayday}</span>` : ''}
+    </div>
+
+    ${sectionLabel('固定项目')}
+    <div class="preview-commission" style="margin-bottom:16px;">
       <div class="row"><span>底薪</span><span class="num">${fmt(report.person.baseSalary)}</span></div>
-      <div class="row"><span>KPI奖金（达标率 ${report.kpiPct}%）</span><span class="num">${fmt(report.kpiAmount)}</span></div>
       <div class="row"><span>津贴</span><span class="num">${fmt(report.person.allowance)}</span></div>
+    </div>
+
+    ${sectionLabel('绩效与提成')}
+    <div class="preview-commission" style="margin-bottom:16px;">
+      <div class="row"><span>KPI奖金（达标率 ${report.kpiPct}%）</span><span class="num">${fmt(report.kpiAmount)}</span></div>
       <div class="row"><span>个人提成合计（sales + 手工服务）</span><span class="num">${fmt(report.personalSales + report.handsOn)}</span></div>
       <div class="row"><span>达标bonus（邀约业绩 ${fmt(report.closedInviteTotal)} / ${fmt(report.targetThreshold)}）</span><span class="num">${fmt(report.targetBonusAmount)}</span></div>
-      <div class="row"><span>Bonus合计</span><span class="num">${fmt(report.bonusTotal)}</span></div>
+      <div class="row"><span>Group Sales Bonus 合计</span><span class="num">${fmt(report.bonusTotal)}</span></div>
     </div>
+    ${report.kpiGap>0 || report.targetBonusGap>0 ? `<div style="margin-bottom:16px;">
+      ${report.kpiGap>0 ? `<p class="hint" style="color:var(--warning);">KPI还差 ${fmt(report.kpiGap)} 就能拿满档（达到95%以上）。</p>` : ''}
+      ${report.targetBonusGap>0 ? `<p class="hint" style="color:var(--warning);">邀约业绩还差 ${fmt(report.targetThreshold-report.closedInviteTotal)} 就能拿满 ${fmt(report.targetPool)} 的达标bonus。</p>` : ''}
+    </div>` : ''}
+
     <div class="summary-strip"><div class="stat total"><p class="label">本月合计</p><p class="value num">${fmt(report.total)}</p></div></div>
-    <p style="font-weight:600;font-size:13px;margin:0 0 8px;">Group Sales Bonus</p>
-    <div class="preview-commission" style="margin-bottom:14px;">${bonusRows}</div>
-    ${report.kpiGap>0 ? `<p class="hint" style="color:var(--warning);">KPI还差 ${fmt(report.kpiGap)} 就能拿满档（达到95%以上）。</p>` : ''}
-    ${report.targetBonusGap>0 ? `<p class="hint" style="color:var(--warning);">邀约业绩还差 ${fmt(report.targetThreshold-report.closedInviteTotal)} 就能拿满 ${fmt(report.targetPool)} 的达标bonus。</p>` : ''}
+
+    ${sectionLabel('Group Sales Bonus 明细')}
+    <div class="preview-commission">${bonusRows}</div>
   `;
 }
 
@@ -980,6 +997,10 @@ function buildAdminSection(){
     </div>
     <div class="panel">
       <h2>薪资设置（底薪 / 津贴 / KPI 三档）</h2>
+      <div class="field" style="max-width:220px;">
+        <label for="paydayInput">本月发薪日期</label>
+        <input type="date" id="paydayInput" />
+      </div>
       <p class="hint" style="margin:0 0 10px;">「本月达标率%」是每个月你自己打分输入的，系统会照下面三档金额自动换算成KPI奖金。</p>
       <div class="table-scroll"><table>
         <thead><tr><th>姓名</th><th class="num">底薪</th><th class="num">津贴</th><th class="num">KPI ≥95%</th><th class="num">KPI 80-94%</th><th class="num">KPI 70-79%</th><th class="num">本月达标率%</th><th class="num">达标bonus封顶</th><th class="num">达标业绩门槛</th></tr></thead>
@@ -1319,6 +1340,17 @@ function renderStatementPersonSelect(){
 function renderPayrollAdminPanel(){
   const body = document.getElementById('payrollSettingsBody');
   if(!body) return;
+
+  const paydayInput = document.getElementById('paydayInput');
+  if(paydayInput){
+    paydayInput.value = currentPayday || '';
+    paydayInput.onchange = async ()=>{
+      const ym = document.getElementById('monthPicker').value;
+      await sb.from('payday_settings').upsert({ ym, payday_date: paydayInput.value || null }, { onConflict:'ym' });
+      currentPayday = paydayInput.value || null;
+      renderPayrollReport();
+    };
+  }
   const eligible = people.filter(p=>p.active && p.role!=='teacher').slice().sort((a,b)=>a.name.localeCompare(b.name));
   body.innerHTML = eligible.map(p=>{
     const pct = (payrollMonthly[p.id] && payrollMonthly[p.id].kpiPct) || 0;
