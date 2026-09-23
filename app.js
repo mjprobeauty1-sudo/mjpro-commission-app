@@ -20,6 +20,7 @@ const TYPES = {
   review:  { label:'客户Review点评',       groups:['client'] },
   tattoo:  { label:'纹绣服务',             groups:['source','client','amount'] },
   referral:{ label:'引流服务',             groups:['client','referral','amount'] },
+  other:   { label:'其他',                 groups:['client','amount'] },
   teacher_service: { label:'抗衰手工项目（老师）', groups:[] }
 };
 const ANTIAGING_OPFEE_VALUE_PREFIX = 'opfee:';
@@ -185,6 +186,9 @@ function allocationsFor(record, adRateByPerson){
     }
     case 'referral': {
       return [{who:personName(record.personId), role: record.productName ? `引流-${record.productName} 操作费` : '引流操作费', amount: amt}];
+    }
+    case 'other': {
+      return [{who:personName(record.personId), role: record.note ? `其他-${record.note}` : '其他项目', amount: amt}];
     }
     case 'care': {
       const eligible = amt>=1000;
@@ -451,6 +455,10 @@ function buildStaffSection(){
 
       <div data-group="referral" style="display:none;">
         <div class="field"><label for="f_referral">引流服务项目</label><select id="f_referral"></select></div>
+        <div class="field" style="flex-direction:row;align-items:center;gap:8px;">
+          <input type="checkbox" id="f_referral_split" style="width:auto;" />
+          <label for="f_referral_split" style="margin:0;">两人平分（金额自动÷2）</label>
+        </div>
       </div>
 
       <div data-group="amount" style="display:none;">
@@ -486,6 +494,7 @@ function buildStaffSection(){
   document.getElementById('f_closed').addEventListener('change', ()=>{ applyFieldVisibility(); updatePreview(); });
   document.getElementById('f_product').addEventListener('change', ()=>{ prefillAntiagingAmount(); updatePreview(); });
   document.getElementById('f_referral').addEventListener('change', ()=>{ prefillReferralAmount(); updatePreview(); });
+  document.getElementById('f_referral_split').addEventListener('change', ()=>{ prefillReferralAmount(); updatePreview(); });
   document.getElementById('f_amount').addEventListener('input', updatePreview);
   document.getElementById('addRecordBtn').addEventListener('click', submitRecord);
   document.getElementById('cancelEditBtn').addEventListener('click', ()=>{
@@ -494,6 +503,7 @@ function buildStaffSection(){
     document.getElementById('f_amount').value='';
     document.getElementById('f_note').value='';
     document.getElementById('f_closed').checked=false;
+    document.getElementById('f_referral_split').checked=false;
     document.getElementById('f_date').value = new Date().toISOString().slice(0,10);
     if(document.getElementById('f_owner')){ document.getElementById('f_owner').value = currentProfile.id; }
     applyFieldVisibility();
@@ -546,7 +556,10 @@ function prefillAntiagingAmount(){
 function prefillReferralAmount(){
   const name = document.getElementById('f_referral').value;
   const item = referralItems.find(i=>i.name===name);
-  document.getElementById('f_amount').value = (item && item.amount) || '';
+  const base = (item && item.amount) || 0;
+  const split = document.getElementById('f_referral_split').checked;
+  const val = split ? base/2 : base;
+  document.getElementById('f_amount').value = val || '';
 }
 
 function applyFieldVisibility(){
@@ -567,6 +580,8 @@ function applyFieldVisibility(){
     label.textContent = '本次金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='referral'){
     label.textContent = '操作费 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
+  } else if(currentType==='other'){
+    label.textContent = '金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='care'){
     label.textContent = '订单金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='tattoo'){
@@ -587,7 +602,7 @@ function renderProductSelect(){
 
 function renderReferralSelect(){
   const sel = document.getElementById('f_referral');
-  sel.innerHTML = referralItems.map(i=>`<option value="${escapeHtml(i.name)}">${escapeHtml(i.name)}（RM${i.amount}）</option>`).join('')
+  sel.innerHTML = referralItems.map(i=>`<option value="${escapeHtml(i.name)}">RM${i.amount} ${escapeHtml(i.name)}</option>`).join('')
     || '<option value="">先请管理员添加引流服务项目</option>';
 }
 
@@ -628,6 +643,8 @@ function updatePreview(){
   } else if(currentType==='referral'){
     const name = document.getElementById('f_referral').value;
     lines.push({label: name?`${name} 操作费`:'引流操作费', val: amt});
+  } else if(currentType==='other'){
+    lines.push({label:'其他项目金额（备注写清楚，方便管理员处理）', val: amt});
   } else if(currentType==='care'){
     const eligible = amt>=1000;
     lines.push({label: eligible?'成交费 5%':'未满 RM1000，不计提成', val: eligible?amt*0.05:0});
@@ -676,6 +693,11 @@ async function submitRecord(){
     rec.product_name = document.getElementById('f_referral').value;
     rec.amount = Number(document.getElementById('f_amount').value)||0;
     if(!rec.product_name || !rec.amount){ errEl.textContent = '请选择引流服务项目并填写金额。'; return; }
+  } else if(currentType==='other'){
+    rec.person_id = ownerId;
+    rec.amount = Number(document.getElementById('f_amount').value)||0;
+    if(!rec.note){ errEl.textContent = '请在备注写清楚这是什么项目，方便管理员处理。'; return; }
+    if(!rec.amount){ errEl.textContent = '请填写金额。'; return; }
   } else if(currentType==='care'){
     rec.person_id = ownerId;
     rec.amount = Number(document.getElementById('f_amount').value)||0;
@@ -706,6 +728,7 @@ async function submitRecord(){
   document.getElementById('f_amount').value='';
   document.getElementById('f_note').value='';
   document.getElementById('f_closed').checked=false;
+  document.getElementById('f_referral_split').checked=false;
   if(wasEditing && document.getElementById('f_owner')){ document.getElementById('f_owner').value = currentProfile.id; }
   const ym = date.slice(0,7);
   if(document.getElementById('monthPicker').value!==ym){ document.getElementById('monthPicker').value=ym; }
@@ -735,6 +758,9 @@ function startEditRecord(rec){
   } else if(rec.type==='referral'){
     renderReferralSelect();
     document.getElementById('f_referral').value = rec.productName || '';
+    document.getElementById('f_referral_split').checked = false;
+    document.getElementById('f_amount').value = rec.amount || '';
+  } else if(rec.type==='other'){
     document.getElementById('f_amount').value = rec.amount || '';
   } else if(rec.type==='care'){
     document.getElementById('f_amount').value = rec.amount || '';
