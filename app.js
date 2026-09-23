@@ -602,7 +602,7 @@ function renderProductSelect(){
 
 function renderReferralSelect(){
   const sel = document.getElementById('f_referral');
-  sel.innerHTML = referralItems.map(i=>`<option value="${escapeHtml(i.name)}">${i.amount>0?`RM${i.amount} `:''}${escapeHtml(i.name)}</option>`).join('')
+  sel.innerHTML = referralItems.map(i=>`<option value="${escapeHtml(i.name)}">${escapeHtml(i.name)}</option>`).join('')
     || '<option value="">先请管理员添加引流服务项目</option>';
 }
 
