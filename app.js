@@ -576,10 +576,11 @@ function applyFieldVisibility(){
 
   const amountInput = document.getElementById('f_amount');
   const label = document.getElementById('f_amount_label');
+  amountInput.readOnly = (currentType==='referral');
   if(currentType==='antiaging'){
     label.textContent = '本次金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='referral'){
-    label.textContent = '操作费 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
+    label.textContent = '操作费 (RM，固定金额，选项目自动带出)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='other'){
     label.textContent = '金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='care'){
