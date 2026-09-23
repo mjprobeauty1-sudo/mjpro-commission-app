@@ -1,4 +1,4 @@
-﻿const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 
 const fmt = n => 'RM ' + Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtPct = n => Number(n||0).toLocaleString('en-MY',{maximumFractionDigits:1}) + '%';
@@ -19,6 +19,7 @@ const TYPES = {
   care:    { label:'润颜术VIP套餐',  groups:['client','amount'] },
   review:  { label:'客户Review点评',       groups:['client'] },
   tattoo:  { label:'纹绣服务',             groups:['source','client','amount'] },
+  referral:{ label:'引流服务',             groups:['client','referral','amount'] },
   teacher_service: { label:'抗衰手工项目（老师）', groups:[] }
 };
 const ANTIAGING_OPFEE_VALUE_PREFIX = 'opfee:';
@@ -104,7 +105,7 @@ function tierRate(amount, tiers){
 }
 
 const PERSONAL_SALES_TYPES = ['invite','tattoo','review','care'];
-const HANDS_ON_TYPES = ['facial','lash','icepoint','antiaging'];
+const HANDS_ON_TYPES = ['facial','lash','icepoint','antiaging','referral'];
 
 function kpiTierAmount(person, pct){
   const p = Number(pct)||0;
@@ -122,6 +123,7 @@ let people = [];
 let records = [];
 let antiAgingProducts = [];
 let antiagingOpItems = [];
+let referralItems = [];
 let settings = { reviewDefaultAmount:4 };
 let currentType = 'invite';
 let editingRecordId = null;
@@ -181,6 +183,9 @@ function allocationsFor(record, adRateByPerson){
       const productName = val.startsWith(ANTIAGING_PRODUCT_VALUE_PREFIX) ? val.slice(ANTIAGING_PRODUCT_VALUE_PREFIX.length) : val;
       return [{who:personName(record.personId), role: productName ? `抗衰-${productName} 提成` : '抗衰（未选项目）', amount: amt}];
     }
+    case 'referral': {
+      return [{who:personName(record.personId), role: record.productName ? `引流-${record.productName} 操作费` : '引流操作费', amount: amt}];
+    }
     case 'care': {
       const eligible = amt>=1000;
       return [{who:personName(record.personId), role: eligible?'润护理/产品套盒成交费 5%':'润护理/产品套盒（未满RM1000，不计提成）', amount: eligible? amt*0.05:0}];
@@ -217,6 +222,7 @@ function recordDetailText(r){
     else if(val.startsWith(ANTIAGING_PRODUCT_VALUE_PREFIX)) parts.push(val.slice(ANTIAGING_PRODUCT_VALUE_PREFIX.length));
   }
   if(r.type==='invite'){ parts.push(r.closed ? '已成交' : '未成交'); }
+  if(r.type==='referral' && r.productName){ parts.push(r.productName); }
   if(r.type==='tattoo'){ parts.push(r.source==='self' ? '自招客户' : '公司客源'); }
   if(r.note) parts.push(r.note);
   return parts.join(' · ') || '—';
@@ -304,15 +310,17 @@ function mapRecord(row){
 }
 
 async function loadAllData(){
-  const [{data:profRows}, {data:prodRows}, {data:opRows}, {data:setRow}] = await Promise.all([
+  const [{data:profRows}, {data:prodRows}, {data:opRows}, {data:setRow}, {data:referralRows}] = await Promise.all([
     sb.from('profiles').select('*'),
     sb.from('antiaging_products').select('*'),
     sb.from('antiaging_op_items').select('*'),
-    sb.from('settings').select('*').eq('id',1).single()
+    sb.from('settings').select('*').eq('id',1).single(),
+    sb.from('referral_items').select('*')
   ]);
   people = (profRows||[]).map(mapProfile);
   antiAgingProducts = (prodRows||[]).map(r=>({name:r.name, commission:r.commission, id:r.id}));
   antiagingOpItems = (opRows||[]).map(r=>({name:r.name, split:r.split, rates:r.rates||{}, id:r.id}));
+  referralItems = (referralRows||[]).map(r=>({name:r.name, amount:Number(r.amount)||0, id:r.id}));
   if(setRow){
     settings = { reviewDefaultAmount:Number(setRow.review_default_amount)||4 };
   }
@@ -441,6 +449,10 @@ function buildStaffSection(){
         <div class="field"><label for="f_product">抗衰项目</label><select id="f_product"></select></div>
       </div>
 
+      <div data-group="referral" style="display:none;">
+        <div class="field"><label for="f_referral">引流服务项目</label><select id="f_referral"></select></div>
+      </div>
+
       <div data-group="amount" style="display:none;">
         <div class="field"><label id="f_amount_label" for="f_amount">金额 (RM)</label><input type="number" id="f_amount" min="0" step="0.01" placeholder="0.00" /></div>
       </div>
@@ -460,6 +472,7 @@ function buildStaffSection(){
   renderTypeTabs();
   applyFieldVisibility();
   renderProductSelect();
+  renderReferralSelect();
 
   if(currentProfile.role==='admin'){
     const ownerSel = document.getElementById('f_owner');
@@ -472,6 +485,7 @@ function buildStaffSection(){
   document.getElementById('f_source').addEventListener('change', ()=>{ applyFieldVisibility(); updatePreview(); });
   document.getElementById('f_closed').addEventListener('change', ()=>{ applyFieldVisibility(); updatePreview(); });
   document.getElementById('f_product').addEventListener('change', ()=>{ prefillAntiagingAmount(); updatePreview(); });
+  document.getElementById('f_referral').addEventListener('change', ()=>{ prefillReferralAmount(); updatePreview(); });
   document.getElementById('f_amount').addEventListener('input', updatePreview);
   document.getElementById('addRecordBtn').addEventListener('click', submitRecord);
   document.getElementById('cancelEditBtn').addEventListener('click', ()=>{
@@ -508,6 +522,7 @@ function renderTypeTabs(){
       currentType = btn.getAttribute('data-type');
       renderTypeTabs(); applyFieldVisibility();
       if(currentType==='antiaging'){ prefillAntiagingAmount(); }
+      if(currentType==='referral'){ prefillReferralAmount(); }
       updatePreview();
     });
   });
@@ -528,9 +543,15 @@ function prefillAntiagingAmount(){
   document.getElementById('f_amount').value = suggested || '';
 }
 
+function prefillReferralAmount(){
+  const name = document.getElementById('f_referral').value;
+  const item = referralItems.find(i=>i.name===name);
+  document.getElementById('f_amount').value = (item && item.amount) || '';
+}
+
 function applyFieldVisibility(){
   const cfg = TYPES[currentType];
-  const allGroups = ['source','client','closed','product','amount'];
+  const allGroups = ['source','client','closed','product','referral','amount'];
   allGroups.forEach(g=>{
     const el = document.querySelector(`[data-group="${g}"]`);
     if(!el) return;
@@ -544,6 +565,8 @@ function applyFieldVisibility(){
   const label = document.getElementById('f_amount_label');
   if(currentType==='antiaging'){
     label.textContent = '本次金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
+  } else if(currentType==='referral'){
+    label.textContent = '操作费 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='care'){
     label.textContent = '订单金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='tattoo'){
@@ -560,6 +583,12 @@ function renderProductSelect(){
   const opOpts = antiagingOpItems.map(i=>`<option value="${ANTIAGING_OPFEE_VALUE_PREFIX}${escapeHtml(i.name)}">${escapeHtml(i.name)}（操作费）</option>`).join('');
   const productOpts = antiAgingProducts.map(p=>`<option value="${ANTIAGING_PRODUCT_VALUE_PREFIX}${escapeHtml(p.name)}">${escapeHtml(p.name)}（RM${p.commission} 提成）</option>`).join('');
   sel.innerHTML = opOpts + productOpts || '<option value="">先请管理员添加抗衰项目</option>';
+}
+
+function renderReferralSelect(){
+  const sel = document.getElementById('f_referral');
+  sel.innerHTML = referralItems.map(i=>`<option value="${escapeHtml(i.name)}">${escapeHtml(i.name)}（RM${i.amount}）</option>`).join('')
+    || '<option value="">先请管理员添加引流服务项目</option>';
 }
 
 function updatePreview(){
@@ -596,6 +625,9 @@ function updatePreview(){
       const productName = val.startsWith(ANTIAGING_PRODUCT_VALUE_PREFIX) ? val.slice(ANTIAGING_PRODUCT_VALUE_PREFIX.length) : val;
       lines.push({label: productName?`${productName} 提成`:'抗衰提成', val: amt});
     }
+  } else if(currentType==='referral'){
+    const name = document.getElementById('f_referral').value;
+    lines.push({label: name?`${name} 操作费`:'引流操作费', val: amt});
   } else if(currentType==='care'){
     const eligible = amt>=1000;
     lines.push({label: eligible?'成交费 5%':'未满 RM1000，不计提成', val: eligible?amt*0.05:0});
@@ -639,6 +671,11 @@ async function submitRecord(){
     rec.product_name = document.getElementById('f_product').value;
     rec.amount = Number(document.getElementById('f_amount').value)||0;
     if(!rec.product_name || !rec.amount){ errEl.textContent = '请选择抗衰项目并填写金额。'; return; }
+  } else if(currentType==='referral'){
+    rec.person_id = ownerId;
+    rec.product_name = document.getElementById('f_referral').value;
+    rec.amount = Number(document.getElementById('f_amount').value)||0;
+    if(!rec.product_name || !rec.amount){ errEl.textContent = '请选择引流服务项目并填写金额。'; return; }
   } else if(currentType==='care'){
     rec.person_id = ownerId;
     rec.amount = Number(document.getElementById('f_amount').value)||0;
@@ -694,6 +731,10 @@ function startEditRecord(rec){
   } else if(rec.type==='antiaging'){
     renderProductSelect();
     document.getElementById('f_product').value = rec.productName || '';
+    document.getElementById('f_amount').value = rec.amount || '';
+  } else if(rec.type==='referral'){
+    renderReferralSelect();
+    document.getElementById('f_referral').value = rec.productName || '';
     document.getElementById('f_amount').value = rec.amount || '';
   } else if(rec.type==='care'){
     document.getElementById('f_amount').value = rec.amount || '';
@@ -1067,6 +1108,16 @@ function buildAdminSection(){
       </div>
     </div>
     <div class="panel">
+      <h2>引流服务项目</h2>
+      <div class="roster-chips" id="referralItemChips"></div>
+      <div class="add-row">
+        <input type="text" id="newReferralName" placeholder="项目名称，例：Facial" />
+        <input type="number" id="newReferralAmount" placeholder="操作费 RM" style="width:110px;" />
+        <button id="addReferralBtn">添加项目</button>
+      </div>
+      <p class="hint">操作费金额只是建议值，填记录时可以自由改（比如两人平分就改成一半）。</p>
+    </div>
+    <div class="panel">
       <h2>抗衰操作费项目</h2>
       <div id="antiOpItemsWrap"></div>
       <div class="add-row">
@@ -1107,6 +1158,7 @@ function buildAdminSection(){
   renderRoster();
   renderOpRates();
   renderAntiProducts();
+  renderReferralItems();
   renderAntiOpItems();
   buildAdminTeacherPanel();
   renderPayrollAdminPanel();
@@ -1114,6 +1166,7 @@ function buildAdminSection(){
 
   document.getElementById('addPersonBtn').addEventListener('click', addPerson);
   document.getElementById('addProductBtn').addEventListener('click', addProduct);
+  document.getElementById('addReferralBtn').addEventListener('click', addReferralItem);
   document.getElementById('addOpItemBtn').addEventListener('click', addOpItem);
   document.getElementById('addBonusBtn').addEventListener('click', addBonusItem);
   document.getElementById('adminRecordsPersonFilter').addEventListener('change', renderAdminRecordsTable);
@@ -1566,6 +1619,38 @@ async function addProduct(){
   await sb.from('antiaging_products').insert({name, commission:Number(commInput.value)||0});
   nameInput.value=''; commInput.value='';
   await loadAllData(); renderAntiProducts(); renderProductSelect(); await renderAll();
+}
+
+function renderReferralItems(){
+  const wrap = document.getElementById('referralItemChips');
+  if(!wrap) return;
+  wrap.innerHTML = referralItems.map(i=>`
+    <span class="roster-chip">${escapeHtml(i.name)}
+      <input type="number" class="num" min="0" step="1" value="${i.amount}" data-referral-rate="${i.id}" />
+      <button class="del" data-del-referral="${i.id}">✕</button>
+    </span>`).join('') || '<p class="empty">还没有添加引流服务项目</p>';
+  wrap.querySelectorAll('[data-referral-rate]').forEach(inp=>{
+    inp.addEventListener('change', async ()=>{
+      await sb.from('referral_items').update({amount:Number(inp.value)||0}).eq('id', inp.getAttribute('data-referral-rate'));
+      await loadAllData(); renderReferralItems(); renderReferralSelect(); await renderAll();
+    });
+  });
+  wrap.querySelectorAll('[data-del-referral]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      await sb.from('referral_items').delete().eq('id', btn.getAttribute('data-del-referral'));
+      await loadAllData(); renderReferralItems(); renderReferralSelect(); await renderAll();
+    });
+  });
+}
+
+async function addReferralItem(){
+  const nameInput = document.getElementById('newReferralName');
+  const amtInput = document.getElementById('newReferralAmount');
+  const name = nameInput.value.trim();
+  if(!name) return;
+  await sb.from('referral_items').insert({name, amount:Number(amtInput.value)||0});
+  nameInput.value=''; amtInput.value='';
+  await loadAllData(); renderReferralItems(); renderReferralSelect(); await renderAll();
 }
 
 function renderAntiOpItems(){
