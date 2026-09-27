@@ -324,7 +324,7 @@ async function loadAllData(){
   people = (profRows||[]).map(mapProfile);
   antiAgingProducts = (prodRows||[]).map(r=>({name:r.name, commission:r.commission, id:r.id}));
   antiagingOpItems = (opRows||[]).map(r=>({name:r.name, split:r.split, rates:r.rates||{}, id:r.id}));
-  referralItems = (referralRows||[]).map(r=>({name:r.name, amount:Number(r.amount)||0, id:r.id}));
+  referralItems = (referralRows||[]).map(r=>({name:r.name, amount:Number(r.amount)||0, inviteFee:Number(r.invite_fee)||0, id:r.id}));
   if(setRow){
     settings = { reviewDefaultAmount:Number(setRow.review_default_amount)||4 };
   }
@@ -456,8 +456,20 @@ function buildStaffSection(){
       <div data-group="referral" style="display:none;">
         <div class="field"><label for="f_referral">引流服务项目</label><select id="f_referral"></select></div>
         <div class="field" style="flex-direction:row;align-items:center;gap:8px;">
+          <input type="checkbox" id="f_referral_served" style="width:auto;" checked />
+          <label for="f_referral_served" style="margin:0;">本次有服务客人（算技术服务费）</label>
+        </div>
+        <div class="field" id="f_referral_qty_field">
+          <label for="f_referral_qty">服务人数</label>
+          <input type="number" id="f_referral_qty" min="1" step="1" value="1" style="max-width:100px;" />
+        </div>
+        <div class="field" style="flex-direction:row;align-items:center;gap:8px;">
           <input type="checkbox" id="f_referral_split" style="width:auto;" />
-          <label for="f_referral_split" style="margin:0;">两人平分（金额自动÷2）</label>
+          <label for="f_referral_split" style="margin:0;">两人平分技术服务费（金额自动÷2）</label>
+        </div>
+        <div class="field" style="flex-direction:row;align-items:center;gap:8px;">
+          <input type="checkbox" id="f_referral_invite" style="width:auto;" />
+          <label for="f_referral_invite" style="margin:0;">本次也是邀约人（加上邀约费）</label>
         </div>
       </div>
 
@@ -481,6 +493,7 @@ function buildStaffSection(){
   applyFieldVisibility();
   renderProductSelect();
   renderReferralSelect();
+  updateReferralQtyVisibility();
 
   if(currentProfile.role==='admin'){
     const ownerSel = document.getElementById('f_owner');
@@ -495,6 +508,9 @@ function buildStaffSection(){
   document.getElementById('f_product').addEventListener('change', ()=>{ prefillAntiagingAmount(); updatePreview(); });
   document.getElementById('f_referral').addEventListener('change', ()=>{ prefillReferralAmount(); updatePreview(); });
   document.getElementById('f_referral_split').addEventListener('change', ()=>{ prefillReferralAmount(); updatePreview(); });
+  document.getElementById('f_referral_served').addEventListener('change', ()=>{ updateReferralQtyVisibility(); prefillReferralAmount(); updatePreview(); });
+  document.getElementById('f_referral_qty').addEventListener('input', ()=>{ prefillReferralAmount(); updatePreview(); });
+  document.getElementById('f_referral_invite').addEventListener('change', ()=>{ prefillReferralAmount(); updatePreview(); });
   document.getElementById('f_amount').addEventListener('input', updatePreview);
   document.getElementById('addRecordBtn').addEventListener('click', submitRecord);
   document.getElementById('cancelEditBtn').addEventListener('click', ()=>{
@@ -504,6 +520,10 @@ function buildStaffSection(){
     document.getElementById('f_note').value='';
     document.getElementById('f_closed').checked=false;
     document.getElementById('f_referral_split').checked=false;
+    document.getElementById('f_referral_served').checked=true;
+    document.getElementById('f_referral_qty').value='1';
+    document.getElementById('f_referral_invite').checked=false;
+    updateReferralQtyVisibility();
     document.getElementById('f_date').value = new Date().toISOString().slice(0,10);
     if(document.getElementById('f_owner')){ document.getElementById('f_owner').value = currentProfile.id; }
     applyFieldVisibility();
@@ -553,13 +573,29 @@ function prefillAntiagingAmount(){
   document.getElementById('f_amount').value = suggested || '';
 }
 
-function prefillReferralAmount(){
+function updateReferralQtyVisibility(){
+  const served = document.getElementById('f_referral_served').checked;
+  document.getElementById('f_referral_qty_field').style.display = served ? '' : 'none';
+}
+
+function referralAmountBreakdown(){
   const name = document.getElementById('f_referral').value;
   const item = referralItems.find(i=>i.name===name);
-  const base = (item && item.amount) || 0;
+  const served = document.getElementById('f_referral_served').checked;
+  const qty = Math.max(1, Number(document.getElementById('f_referral_qty').value)||1);
   const split = document.getElementById('f_referral_split').checked;
-  const val = split ? base/2 : base;
-  document.getElementById('f_amount').value = val || '';
+  const invite = document.getElementById('f_referral_invite').checked;
+  const perPerson = (item && item.amount) || 0;
+  const inviteFee = (item && item.inviteFee) || 0;
+  let serviceFee = served ? perPerson * qty : 0;
+  if(split) serviceFee = serviceFee / 2;
+  const inviteAmount = invite ? inviteFee : 0;
+  return { itemName: name, served, qty, split, invite, serviceFee, inviteAmount, total: serviceFee + inviteAmount };
+}
+
+function prefillReferralAmount(){
+  const { total } = referralAmountBreakdown();
+  document.getElementById('f_amount').value = total || '';
 }
 
 function applyFieldVisibility(){
@@ -580,7 +616,7 @@ function applyFieldVisibility(){
   if(currentType==='antiaging'){
     label.textContent = '本次金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='referral'){
-    label.textContent = '操作费 (RM，固定金额，选项目自动带出)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
+    label.textContent = '合计金额 (RM，固定金额，自动带出)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='other'){
     label.textContent = '金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='care'){
@@ -642,8 +678,10 @@ function updatePreview(){
       lines.push({label: productName?`${productName} 提成`:'抗衰提成', val: amt});
     }
   } else if(currentType==='referral'){
-    const name = document.getElementById('f_referral').value;
-    lines.push({label: name?`${name} 操作费`:'引流操作费', val: amt});
+    const b = referralAmountBreakdown();
+    if(b.served) lines.push({label: `${b.itemName||'引流'} 技术服务费${b.qty>1?`×${b.qty}人`:''}${b.split?'（两人平分）':''}`, val: b.serviceFee});
+    if(b.invite) lines.push({label: `${b.itemName||'引流'} 邀约费`, val: b.inviteAmount});
+    if(!b.served && !b.invite) lines.push({label:'请勾选服务客人或邀约人其中一项', val:0});
   } else if(currentType==='other'){
     lines.push({label:'其他项目金额（备注写清楚，方便管理员处理）', val: amt});
   } else if(currentType==='care'){
@@ -693,7 +731,8 @@ async function submitRecord(){
     rec.person_id = ownerId;
     rec.product_name = document.getElementById('f_referral').value;
     rec.amount = Number(document.getElementById('f_amount').value)||0;
-    if(!rec.product_name || !rec.amount){ errEl.textContent = '请选择引流服务项目并填写金额。'; return; }
+    if(!rec.product_name){ errEl.textContent = '请选择引流服务项目。'; return; }
+    if(!rec.amount){ errEl.textContent = '金额是0，请勾选「服务客人」或「邀约人」其中一项。'; return; }
   } else if(currentType==='other'){
     rec.person_id = ownerId;
     rec.amount = Number(document.getElementById('f_amount').value)||0;
@@ -730,6 +769,10 @@ async function submitRecord(){
   document.getElementById('f_note').value='';
   document.getElementById('f_closed').checked=false;
   document.getElementById('f_referral_split').checked=false;
+  document.getElementById('f_referral_served').checked=true;
+  document.getElementById('f_referral_qty').value='1';
+  document.getElementById('f_referral_invite').checked=false;
+  updateReferralQtyVisibility();
   if(wasEditing && document.getElementById('f_owner')){ document.getElementById('f_owner').value = currentProfile.id; }
   const ym = date.slice(0,7);
   if(document.getElementById('monthPicker').value!==ym){ document.getElementById('monthPicker').value=ym; }
@@ -760,6 +803,10 @@ function startEditRecord(rec){
     renderReferralSelect();
     document.getElementById('f_referral').value = rec.productName || '';
     document.getElementById('f_referral_split').checked = false;
+    document.getElementById('f_referral_served').checked = true;
+    document.getElementById('f_referral_qty').value = '1';
+    document.getElementById('f_referral_invite').checked = false;
+    updateReferralQtyVisibility();
     document.getElementById('f_amount').value = rec.amount || '';
   } else if(rec.type==='other'){
     document.getElementById('f_amount').value = rec.amount || '';
@@ -1139,10 +1186,11 @@ function buildAdminSection(){
       <div class="roster-chips" id="referralItemChips"></div>
       <div class="add-row">
         <input type="text" id="newReferralName" placeholder="项目名称，例：Facial" />
-        <input type="number" id="newReferralAmount" placeholder="操作费 RM" style="width:110px;" />
+        <input type="number" id="newReferralAmount" placeholder="技术服务费/人 RM" style="width:130px;" />
+        <input type="number" id="newReferralInviteFee" placeholder="邀约费/组 RM" style="width:120px;" />
         <button id="addReferralBtn">添加项目</button>
       </div>
-      <p class="hint">操作费金额只是建议值，填记录时可以自由改（比如两人平分就改成一半）。</p>
+      <p class="hint">技术服务费是每服务一位客人的金额（会自动乘以服务人数）；邀约费是整组固定一笔，只有勾了「本次也是邀约人」才会加上。两个金额都是固定的，员工不能自己改。</p>
     </div>
     <div class="panel">
       <h2>抗衰操作费项目</h2>
@@ -1653,12 +1701,21 @@ function renderReferralItems(){
   if(!wrap) return;
   wrap.innerHTML = referralItems.map(i=>`
     <span class="roster-chip">${escapeHtml(i.name)}
-      <input type="number" class="num" min="0" step="1" value="${i.amount}" data-referral-rate="${i.id}" />
+      <span class="hint" style="margin-left:4px;">技术费/人</span>
+      <input type="number" class="num" min="0" step="1" value="${i.amount}" data-referral-rate="${i.id}" style="width:70px;" />
+      <span class="hint">邀约费/组</span>
+      <input type="number" class="num" min="0" step="1" value="${i.inviteFee}" data-referral-invite="${i.id}" style="width:70px;" />
       <button class="del" data-del-referral="${i.id}">✕</button>
     </span>`).join('') || '<p class="empty">还没有添加引流服务项目</p>';
   wrap.querySelectorAll('[data-referral-rate]').forEach(inp=>{
     inp.addEventListener('change', async ()=>{
       await sb.from('referral_items').update({amount:Number(inp.value)||0}).eq('id', inp.getAttribute('data-referral-rate'));
+      await loadAllData(); renderReferralItems(); renderReferralSelect(); await renderAll();
+    });
+  });
+  wrap.querySelectorAll('[data-referral-invite]').forEach(inp=>{
+    inp.addEventListener('change', async ()=>{
+      await sb.from('referral_items').update({invite_fee:Number(inp.value)||0}).eq('id', inp.getAttribute('data-referral-invite'));
       await loadAllData(); renderReferralItems(); renderReferralSelect(); await renderAll();
     });
   });
@@ -1673,10 +1730,11 @@ function renderReferralItems(){
 async function addReferralItem(){
   const nameInput = document.getElementById('newReferralName');
   const amtInput = document.getElementById('newReferralAmount');
+  const inviteInput = document.getElementById('newReferralInviteFee');
   const name = nameInput.value.trim();
   if(!name) return;
-  await sb.from('referral_items').insert({name, amount:Number(amtInput.value)||0});
-  nameInput.value=''; amtInput.value='';
+  await sb.from('referral_items').insert({name, amount:Number(amtInput.value)||0, invite_fee:Number(inviteInput.value)||0});
+  nameInput.value=''; amtInput.value=''; inviteInput.value='';
   await loadAllData(); renderReferralItems(); renderReferralSelect(); await renderAll();
 }
 
