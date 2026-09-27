@@ -464,12 +464,8 @@ function buildStaffSection(){
           <input type="number" id="f_referral_qty" min="1" step="1" value="1" style="max-width:100px;" />
         </div>
         <div class="field" style="flex-direction:row;align-items:center;gap:8px;">
-          <input type="checkbox" id="f_referral_split" style="width:auto;" />
-          <label for="f_referral_split" style="margin:0;">两人平分技术服务费（金额自动÷2）</label>
-        </div>
-        <div class="field" style="flex-direction:row;align-items:center;gap:8px;">
           <input type="checkbox" id="f_referral_invite" style="width:auto;" />
-          <label for="f_referral_invite" style="margin:0;">本次也是邀约人（加上邀约费）</label>
+          <label for="f_referral_invite" style="margin:0;">邀约人（邀约费）</label>
         </div>
       </div>
 
@@ -507,7 +503,6 @@ function buildStaffSection(){
   document.getElementById('f_closed').addEventListener('change', ()=>{ applyFieldVisibility(); updatePreview(); });
   document.getElementById('f_product').addEventListener('change', ()=>{ prefillAntiagingAmount(); updatePreview(); });
   document.getElementById('f_referral').addEventListener('change', ()=>{ prefillReferralAmount(); updatePreview(); });
-  document.getElementById('f_referral_split').addEventListener('change', ()=>{ prefillReferralAmount(); updatePreview(); });
   document.getElementById('f_referral_served').addEventListener('change', ()=>{ updateReferralQtyVisibility(); prefillReferralAmount(); updatePreview(); });
   document.getElementById('f_referral_qty').addEventListener('input', ()=>{ prefillReferralAmount(); updatePreview(); });
   document.getElementById('f_referral_invite').addEventListener('change', ()=>{ prefillReferralAmount(); updatePreview(); });
@@ -519,7 +514,6 @@ function buildStaffSection(){
     document.getElementById('f_amount').value='';
     document.getElementById('f_note').value='';
     document.getElementById('f_closed').checked=false;
-    document.getElementById('f_referral_split').checked=false;
     document.getElementById('f_referral_served').checked=true;
     document.getElementById('f_referral_qty').value='1';
     document.getElementById('f_referral_invite').checked=false;
@@ -583,14 +577,12 @@ function referralAmountBreakdown(){
   const item = referralItems.find(i=>i.name===name);
   const served = document.getElementById('f_referral_served').checked;
   const qty = Math.max(1, Number(document.getElementById('f_referral_qty').value)||1);
-  const split = document.getElementById('f_referral_split').checked;
   const invite = document.getElementById('f_referral_invite').checked;
   const perPerson = (item && item.amount) || 0;
   const inviteFee = (item && item.inviteFee) || 0;
-  let serviceFee = served ? perPerson * qty : 0;
-  if(split) serviceFee = serviceFee / 2;
+  const serviceFee = served ? perPerson * qty : 0;
   const inviteAmount = invite ? inviteFee : 0;
-  return { itemName: name, served, qty, split, invite, serviceFee, inviteAmount, total: serviceFee + inviteAmount };
+  return { itemName: name, served, qty, invite, serviceFee, inviteAmount, total: serviceFee + inviteAmount };
 }
 
 function prefillReferralAmount(){
@@ -679,7 +671,7 @@ function updatePreview(){
     }
   } else if(currentType==='referral'){
     const b = referralAmountBreakdown();
-    if(b.served) lines.push({label: `${b.itemName||'引流'} 技术服务费${b.qty>1?`×${b.qty}人`:''}${b.split?'（两人平分）':''}`, val: b.serviceFee});
+    if(b.served) lines.push({label: `${b.itemName||'引流'} 技术服务费${b.qty>1?`×${b.qty}人`:''}`, val: b.serviceFee});
     if(b.invite) lines.push({label: `${b.itemName||'引流'} 邀约费`, val: b.inviteAmount});
     if(!b.served && !b.invite) lines.push({label:'请勾选服务客人或邀约人其中一项', val:0});
   } else if(currentType==='other'){
@@ -768,7 +760,6 @@ async function submitRecord(){
   document.getElementById('f_amount').value='';
   document.getElementById('f_note').value='';
   document.getElementById('f_closed').checked=false;
-  document.getElementById('f_referral_split').checked=false;
   document.getElementById('f_referral_served').checked=true;
   document.getElementById('f_referral_qty').value='1';
   document.getElementById('f_referral_invite').checked=false;
@@ -802,7 +793,6 @@ function startEditRecord(rec){
   } else if(rec.type==='referral'){
     renderReferralSelect();
     document.getElementById('f_referral').value = rec.productName || '';
-    document.getElementById('f_referral_split').checked = false;
     document.getElementById('f_referral_served').checked = true;
     document.getElementById('f_referral_qty').value = '1';
     document.getElementById('f_referral_invite').checked = false;
