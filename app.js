@@ -137,6 +137,10 @@ function roleLabel(role){
   return role==='admin' ? '管理员' : role==='teacher' ? '技术老师' : '员工';
 }
 
+const STATUS_LABELS = { pending:'待审核', reviewed:'已审核', paid:'已结算' };
+function statusLabel(status){ return STATUS_LABELS[status] || STATUS_LABELS.pending; }
+function statusClass(status){ return (status==='paid'||status==='reviewed') ? status : 'pending'; }
+
 function personName(id){
   if(!id) return '—';
   const p = people.find(p=>p.id===id);
@@ -973,7 +977,7 @@ function renderMyTeacherRecords(){
       <td>${escapeHtml(r.client||'—')}</td>
       <td>${escapeHtml(r.note||'—')}</td>
       <td class="num" style="font-weight:600;">${fmt(amt)}</td>
-      <td><span class="pill ${r.status==='paid'?'paid':'pending'}">${r.status==='paid'?'已结算':'待结算'}</span></td>
+      <td><span class="pill ${statusClass(r.status)}">${statusLabel(r.status)}</span></td>
     </tr>`;
   }).join('');
 
@@ -1012,7 +1016,7 @@ function renderMyRecords(){
       <td>${escapeHtml(r.client||'—')}</td>
       <td>${escapeHtml(recordDetailText(r))}</td>
       <td class="num" style="font-weight:600;">${fmt(sum)}</td>
-      <td><span class="pill ${r.status==='paid'?'paid':'pending'}">${r.status==='paid'?'已结算':'待结算'}</span></td>
+      <td><span class="pill ${statusClass(r.status)}">${statusLabel(r.status)}</span></td>
     </tr>`;
   }).join('');
 
@@ -1833,17 +1837,21 @@ function renderAdminRecordsTable(){
       <td>${escapeHtml(who)}</td>
       <td>${escapeHtml(r.client||'—')}</td>
       <td class="num">${allocText}<div style="margin-top:4px;font-weight:600;">合计 ${fmt(total)}</div></td>
-      <td><button class="pill ${r.status==='paid'?'paid':'pending'}" data-toggle="${r.id}">${r.status==='paid'?'已结算':'待结算'}</button>
+      <td>
+          <select data-status="${r.id}" class="pill ${statusClass(r.status)}" style="border:none;">
+            <option value="pending" ${r.status==='pending'||!r.status?'selected':''}>待审核</option>
+            <option value="reviewed" ${r.status==='reviewed'?'selected':''}>已审核</option>
+            <option value="paid" ${r.status==='paid'?'selected':''}>已结算</option>
+          </select>
           ${r.type==='teacher_service' ? `<button data-edit-teacher="${r.id}" style="margin-left:4px;">编辑</button>` : `<button data-edit="${r.id}" style="margin-left:4px;">编辑</button>`}
           <button data-del="${r.id}" style="margin-left:4px;">删除</button></td>
     </tr>`;
   }).join('') || '<tr><td colspan="6" class="empty">本月还没有记录</td></tr>';
 
-  body.querySelectorAll('[data-toggle]').forEach(btn=>{
-    btn.addEventListener('click', async ()=>{
-      const rec = records.find(r=>r.id===btn.getAttribute('data-toggle'));
-      const newStatus = rec.status==='paid'?'pending':'paid';
-      await sb.from('records').update({status:newStatus}).eq('id', rec.id);
+  body.querySelectorAll('[data-status]').forEach(sel=>{
+    sel.addEventListener('change', async ()=>{
+      const newStatus = sel.value;
+      await sb.from('records').update({status:newStatus}).eq('id', sel.getAttribute('data-status'));
       await renderAll();
     });
   });
