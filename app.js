@@ -167,6 +167,12 @@ function allocationsFor(record, adRateByPerson){
       return allocs;
     }
     case 'facial': case 'lash': case 'icepoint': {
+      if(record.type==='lash' && Number(record.rate)===70){
+        return [
+          {who:personName(record.personId), role:'睫毛特别分成（本人70%）', amount: amt*0.7},
+          {who:'公司', role:'睫毛特别分成（公司30%）', amount: amt*0.3}
+        ];
+      }
       const op = OP_TYPES.find(o=>o.key===record.type);
       const person = people.find(p=>p.id===record.personId);
       const fee = person ? Number(person[op.field])||0 : 0;
@@ -446,6 +452,13 @@ function buildStaffSection(){
         <div class="field"><label for="f_client">客户名称</label><input type="text" id="f_client" placeholder="选填" /></div>
       </div>
 
+      <div data-group="lash_special" style="display:none;">
+        <div class="field" style="flex-direction:row;align-items:center;gap:8px;">
+          <input type="checkbox" id="f_lash_special" style="width:auto;" />
+          <label for="f_lash_special" style="margin:0;">特别分成（70%本人 / 30%公司，自己填金额，备注写清楚原因）</label>
+        </div>
+      </div>
+
       <div data-group="closed" style="display:none;">
         <div class="field" style="flex-direction:row;align-items:center;gap:8px;">
           <input type="checkbox" id="f_closed" style="width:auto;" />
@@ -510,6 +523,7 @@ function buildStaffSection(){
   document.getElementById('f_referral_served').addEventListener('change', ()=>{ updateReferralQtyVisibility(); prefillReferralAmount(); updatePreview(); });
   document.getElementById('f_referral_qty').addEventListener('input', ()=>{ prefillReferralAmount(); updatePreview(); });
   document.getElementById('f_referral_invite').addEventListener('change', ()=>{ prefillReferralAmount(); updatePreview(); });
+  document.getElementById('f_lash_special').addEventListener('change', ()=>{ applyFieldVisibility(); updatePreview(); });
   document.getElementById('f_amount').addEventListener('input', updatePreview);
   document.getElementById('addRecordBtn').addEventListener('click', submitRecord);
   document.getElementById('cancelEditBtn').addEventListener('click', ()=>{
@@ -596,12 +610,15 @@ function prefillReferralAmount(){
 
 function applyFieldVisibility(){
   const cfg = TYPES[currentType];
-  const allGroups = ['source','client','closed','product','referral','amount'];
+  const allGroups = ['source','client','closed','product','referral','lash_special','amount'];
+  const lashSpecialOn = currentType==='lash' && document.getElementById('f_lash_special').checked;
   allGroups.forEach(g=>{
     const el = document.querySelector(`[data-group="${g}"]`);
     if(!el) return;
     let show = cfg.groups.includes(g);
     if(currentType==='invite' && g==='amount'){ show = document.getElementById('f_closed').checked; }
+    if(g==='lash_special'){ show = currentType==='lash'; }
+    if(currentType==='lash' && g==='amount'){ show = lashSpecialOn; }
     el.style.display = show ? '' : 'none';
   });
   document.getElementById('directorField').style.display = (currentType==='tattoo' && document.getElementById('f_source').value==='company') ? '' : 'none';
@@ -613,6 +630,8 @@ function applyFieldVisibility(){
     label.textContent = '本次金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='referral'){
     label.textContent = '合计金额 (RM，固定金额，自动带出)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
+  } else if(currentType==='lash' && lashSpecialOn){
+    label.textContent = '操作费 (RM，70/30分)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='other'){
     label.textContent = '金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='care'){
@@ -653,6 +672,9 @@ function updatePreview(){
       const tRate = tierRate(existing+amt, PERSONAL_AD_TIERS);
       lines.push({label:`面诊成交提成 ${fmtPct(tRate*100)}（按本人当月累计业绩阶梯）`, val: amt*tRate});
     }
+  } else if(currentType==='lash' && document.getElementById('f_lash_special').checked){
+    lines.push({label:'特别分成（本人 70%）', val: amt*0.7});
+    lines.push({label:'特别分成（公司 30%）', val: amt*0.3});
   } else if(OP_TYPE_KEYS.includes(currentType)){
     const op = OP_TYPES.find(o=>o.key===currentType);
     const ownerProfile = people.find(p=>p.id===currentOwnerId());
@@ -716,6 +738,12 @@ async function submitRecord(){
     rec.closed = document.getElementById('f_closed').checked;
     rec.amount = rec.closed ? (Number(document.getElementById('f_amount').value)||0) : 0;
     if(rec.closed && !rec.amount){ errEl.textContent = '已勾选「已成交」，请填写面诊成交业绩金额。'; return; }
+  } else if(currentType==='lash' && document.getElementById('f_lash_special').checked){
+    rec.person_id = ownerId;
+    rec.rate = 70;
+    rec.amount = Number(document.getElementById('f_amount').value)||0;
+    if(!rec.amount){ errEl.textContent = '请填写操作费金额。'; return; }
+    if(!rec.note){ errEl.textContent = '特别分成需要在备注写清楚原因。'; return; }
   } else if(OP_TYPE_KEYS.includes(currentType)){
     rec.person_id = ownerId;
   } else if(currentType==='antiaging'){
@@ -776,6 +804,7 @@ async function submitRecord(){
 
 function startEditRecord(rec){
   currentType = rec.type;
+  document.getElementById('f_lash_special').checked = !!(rec.type==='lash' && Number(rec.rate)===70);
   renderTypeTabs();
   applyFieldVisibility();
 
@@ -790,6 +819,10 @@ function startEditRecord(rec){
     document.getElementById('f_closed').checked = !!rec.closed;
     applyFieldVisibility();
     if(rec.closed){ document.getElementById('f_amount').value = rec.amount || ''; }
+  } else if(rec.type==='lash' && Number(rec.rate)===70){
+    document.getElementById('f_lash_special').checked = true;
+    applyFieldVisibility();
+    document.getElementById('f_amount').value = rec.amount || '';
   } else if(rec.type==='antiaging'){
     renderProductSelect();
     document.getElementById('f_product').value = rec.productName || '';
