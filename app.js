@@ -390,8 +390,8 @@ function computePayrollReport(personId){
   const closedInviteTotal = adTotals[personId] || 0;
   const targetThreshold = Number(person.targetBonusThreshold)||0;
   const targetPool = Number(person.targetBonusPool)||0;
-  const targetPct = targetThreshold>0 ? Math.min(1, closedInviteTotal/targetThreshold) : 0;
-  const targetBonusAmount = Math.round(targetPool*targetPct*100)/100;
+  const targetMet = targetThreshold>0 && closedInviteTotal>=targetThreshold;
+  const targetBonusAmount = targetMet ? targetPool : 0;
   const targetBonusGap = Math.max(0, targetPool - targetBonusAmount);
   const myBonusItems = bonusItems.filter(b=>b.personId===personId);
   const bonusTotal = myBonusItems.reduce((s,b)=>s+b.amount,0);
@@ -1113,7 +1113,7 @@ function renderPayrollReport(){
     ${report.kpiGap>0 || report.targetBonusGap>0 ? `<div style="border-left:3px solid var(--warning);background:var(--warning-soft);border-radius:0 10px 10px 0;padding:12px 16px;margin-bottom:24px;">
       <p style="font-size:12px;color:var(--warning);font-weight:600;margin:0 0 6px;">⚠️ 还差一点就能拿满</p>
       ${report.kpiGap>0 ? `<p style="font-size:13px;color:var(--warning);margin:0 0 4px;">KPI还差 <b class="num">${fmt(report.kpiGap)}</b> 就能拿满档（达到95%以上）</p>` : ''}
-      ${report.targetBonusGap>0 ? `<p style="font-size:13px;color:var(--warning);margin:0;">邀约业绩还差 <b class="num">${fmt(report.targetThreshold-report.closedInviteTotal)}</b> 就能拿满 ${fmt(report.targetPool)} 的达标bonus</p>` : ''}
+      ${report.targetBonusGap>0 ? `<p style="font-size:13px;color:var(--warning);margin:0;">邀约业绩还差 <b class="num">${fmt(report.targetThreshold-report.closedInviteTotal)}</b> 达标，就能拿到 ${fmt(report.targetPool)} 的达标bonus（目前未达标，没有这笔）</p>` : ''}
     </div>` : ''}
 
     ${sectionLabel('Group Sales Bonus 明细')}
@@ -1152,7 +1152,7 @@ function buildAdminSection(){
         <thead><tr><th>姓名</th><th class="num">底薪</th><th class="num">津贴</th><th class="num">KPI ≥95%</th><th class="num">KPI 80-94%</th><th class="num">KPI 70-79%</th><th class="num">本月达标率%</th><th class="num">达标bonus封顶</th><th class="num">达标业绩门槛</th></tr></thead>
         <tbody id="payrollSettingsBody"></tbody>
       </table></div>
-      <p class="hint" style="margin-top:8px;">「达标bonus」是照这个人当月邀约已成交业绩，除以「达标业绩门槛」算完成率（封顶100%），再乘以「达标bonus封顶」自动算出来的，不用手动输入。</p>
+      <p class="hint" style="margin-top:8px;">「达标bonus」是看这个人当月邀约已成交业绩：达到「达标业绩门槛」才发整笔「达标bonus封顶」的金额，没达到就是 RM0，系统自动判断，不用手动输入。</p>
     </div>
     <div class="panel">
       <h2>Group Sales Bonus 管理</h2>
