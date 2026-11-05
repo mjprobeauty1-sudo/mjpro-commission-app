@@ -105,7 +105,7 @@ function tierRate(amount, tiers){
   return tiers[tiers.length-1].rate;
 }
 
-const PERSONAL_SALES_TYPES = ['invite','tattoo','review','care'];
+const PERSONAL_SALES_TYPES = ['invite','tattoo','review','care','other'];
 const HANDS_ON_TYPES = ['facial','lash','icepoint','antiaging','referral'];
 
 function kpiTierAmount(person, pct){
@@ -1103,7 +1103,7 @@ function renderPayrollReport(){
     ${sectionLabel('绩效与提成')}
     ${plainCard(
       row(`KPI奖金（达标率 ${report.kpiPct}%）`, report.kpiAmount) +
-      row('个人提成合计（sales + 手工服务）', report.personalSales + report.handsOn) +
+      row('个人提成合计（sales + 手工服务 + 其他）', report.personalSales + report.handsOn) +
       row(`达标bonus（邀约业绩 ${fmt(report.closedInviteTotal)} / ${fmt(report.targetThreshold)}）`, report.targetBonusAmount) +
       rowNoBorder('Group Sales Bonus 合计', report.bonusTotal)
     )}
