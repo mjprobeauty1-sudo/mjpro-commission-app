@@ -21,8 +21,58 @@ const TYPES = {
   tattoo:  { label:'纹绣服务',             groups:['source','client','amount'] },
   referral:{ label:'引流服务',             groups:['client','referral','amount'] },
   other:   { label:'其他',                 groups:['client','amount'] },
-  teacher_service: { label:'抗衰手工项目（老师）', groups:[] }
+  teacher_service: { label:'抗衰手工项目（老师）', groups:[] },
+  // 美业自由合作伙伴计划制度（2026 年版）— only shown for people in PARTNER_NAMES
+  p_lash:      { label:'美睫手工费',        groups:['client','pmenu'],          partner:true },
+  p_facial:    { label:'美容手工费',        groups:['client','pmenu'],          partner:true },
+  p_product:   { label:'皮肤管理产品 10%',  groups:['client','amount'],         partner:true },
+  p_topup:     { label:'会员卡充值 5%',     groups:['client','amount'],         partner:true },
+  p_franchise: { label:'棠美加盟奖励',      groups:['client','pmenu'],          partner:true },
+  p_freckle:   { label:'祛斑邀约奖励',      groups:['client','amount','prate'], partner:true },
+  p_profit:    { label:'自开发客户 5/5',    groups:['client','amount'],         partner:true }
 };
+const PARTNER_TYPE_KEYS = Object.keys(TYPES).filter(k=>TYPES[k].partner);
+// Matched against the profile name, case-insensitive. Add another name here to put that person on the partner program.
+const PARTNER_NAMES = ['minna'];
+function isPartner(personId){
+  const p = people.find(x=>x.id===personId);
+  const name = String((p && p.name) || '').trim().toLowerCase();
+  return !!name && PARTNER_NAMES.some(n=>name.includes(n));
+}
+// Fixed amounts from the partner program. The amount is saved on each record, so later changes here don't alter old records.
+const PARTNER_MENUS = {
+  p_lash: [
+    {name:'引流睫毛新客户', fee:40},
+    {name:'RM128 基础款', fee:50},
+    {name:'RM208 高级定制款', fee:60},
+    {name:'下睫毛', fee:10},
+    {name:'卸睫毛', fee:10}
+  ],
+  p_facial: [
+    {name:'引流美容新客户', fee:40},
+    {name:'RM128 基础清洁', fee:50},
+    {name:'RM198 深层清洁', fee:60},
+    {name:'RM298 Medic 护理', fee:80}
+  ],
+  p_franchise: [
+    {name:'RM6,868 代颜人', fee:350},
+    {name:'RM12,868 团长', fee:650},
+    {name:'RM45,868 CEO', fee:2000},
+    {name:'RM145,868 事业部', fee:5000}
+  ]
+};
+function partnerMenuFee(type, itemName){
+  const item = (PARTNER_MENUS[type]||[]).find(i=>i.name===itemName);
+  return item ? item.fee : 0;
+}
+// 祛斑邀约: the whole amount uses one rate by band. Outside RM10,000–150,000 the company sets the rate by hand.
+function freckleTierRate(amount){
+  const a = Number(amount)||0;
+  if(a>=10000 && a<=50000) return 5;
+  if(a>50000 && a<=80000) return 8;
+  if(a>80000 && a<=150000) return 10;
+  return null;
+}
 const ANTIAGING_OPFEE_VALUE_PREFIX = 'opfee:';
 const ANTIAGING_PRODUCT_VALUE_PREFIX = 'product:';
 
@@ -105,8 +155,8 @@ function tierRate(amount, tiers){
   return tiers[tiers.length-1].rate;
 }
 
-const PERSONAL_SALES_TYPES = ['invite','tattoo','review','care','other'];
-const HANDS_ON_TYPES = ['facial','lash','icepoint','antiaging','referral'];
+const PERSONAL_SALES_TYPES = ['invite','tattoo','review','care','other','p_product','p_topup','p_franchise','p_freckle','p_profit'];
+const HANDS_ON_TYPES = ['facial','lash','icepoint','antiaging','referral','p_lash','p_facial'];
 
 function kpiTierAmount(person, pct){
   const p = Number(pct)||0;
@@ -224,6 +274,28 @@ function allocationsFor(record, adRateByPerson){
     case 'teacher_service': {
       return [{who:personName(record.personId), role:teacherItemLabel(record.productName), amount: amt}];
     }
+    case 'p_lash': case 'p_facial': {
+      return [{who:personName(record.personId), role:`${TYPES[record.type].label}-${record.productName||'未选项目'}`, amount: amt}];
+    }
+    case 'p_product': {
+      return [{who:personName(record.personId), role:'皮肤管理产品销售提成 10%', amount: amt*0.10}];
+    }
+    case 'p_topup': {
+      return [{who:personName(record.personId), role:'会员卡充值成交提成 5%', amount: amt*0.05}];
+    }
+    case 'p_franchise': {
+      return [{who:personName(record.personId), role:`棠美加盟奖励-${record.productName||'未选配套'}`, amount: amt}];
+    }
+    case 'p_freckle': {
+      const rate = Number(record.rate)||0;
+      return [{who:personName(record.personId), role:`祛斑邀约奖励 ${fmtPct(rate)}`, amount: amt*rate/100}];
+    }
+    case 'p_profit': {
+      return [
+        {who:personName(record.personId), role:'自开发客户净利润（合作伙伴 50%）', amount: amt*0.5},
+        {who:'公司', role:'自开发客户净利润（公司 50%）', amount: amt*0.5}
+      ];
+    }
     default: return [];
   }
 }
@@ -238,6 +310,8 @@ function recordDetailText(r){
   if(r.type==='invite'){ parts.push(r.closed ? '已成交' : '未成交'); }
   if(r.type==='referral' && r.productName){ parts.push(r.productName); }
   if(r.type==='tattoo'){ parts.push(r.source==='self' ? '自招客户' : '公司客源'); }
+  if(PARTNER_MENUS[r.type] && r.productName){ parts.push(r.productName); }
+  if(r.type==='p_freckle'){ parts.push(`奖励比例 ${fmtPct(r.rate)}`); }
   if(r.note) parts.push(r.note);
   return parts.join(' · ') || '—';
 }
@@ -486,8 +560,18 @@ function buildStaffSection(){
         </div>
       </div>
 
+      <div data-group="pmenu" style="display:none;">
+        <div class="field"><label id="f_pmenu_label" for="f_pmenu">项目</label><select id="f_pmenu"></select></div>
+      </div>
+
       <div data-group="amount" style="display:none;">
         <div class="field"><label id="f_amount_label" for="f_amount">金额 (RM)</label><input type="number" id="f_amount" min="0" step="0.01" placeholder="0.00" /></div>
+      </div>
+
+      <div data-group="prate" style="display:none;">
+        <div class="field"><label for="f_prate">奖励比例 (%)</label><input type="number" id="f_prate" min="0" max="100" step="0.5" style="max-width:120px;" />
+          <p class="hint" id="f_prate_hint"></p>
+        </div>
       </div>
 
       <div class="preview-commission" id="commissionPreview"></div>
@@ -513,8 +597,17 @@ function buildStaffSection(){
     const eligible = people.filter(p=>p.active && p.role!=='teacher').slice().sort((a,b)=>a.name.localeCompare(b.name));
     ownerSel.innerHTML = eligible.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
     ownerSel.value = currentProfile.id;
-    ownerSel.addEventListener('change', ()=>{ prefillAntiagingAmount(); updatePreview(); });
+    ownerSel.addEventListener('change', ()=>{ renderTypeTabs(); applyFieldVisibility(); renderPmenuSelect(); prefillAntiagingAmount(); updatePreview(); });
   }
+  renderTypeTabs();
+  applyFieldVisibility();
+  renderPmenuSelect();
+
+  document.getElementById('f_pmenu').addEventListener('change', updatePreview);
+  document.getElementById('f_prate').addEventListener('input', updatePreview);
+  document.getElementById('f_amount').addEventListener('input', ()=>{
+    if(currentType==='p_freckle'){ prefillFreckleRate(); }
+  });
 
   document.getElementById('f_source').addEventListener('change', ()=>{ applyFieldVisibility(); updatePreview(); });
   document.getElementById('f_closed').addEventListener('change', ()=>{ applyFieldVisibility(); updatePreview(); });
@@ -554,9 +647,18 @@ function exitEditMode(){
   document.getElementById('cancelEditBtn').style.display = 'none';
 }
 
+// Partners (see PARTNER_NAMES) get the partner program types plus 其他; everyone else keeps the usual types.
+function visibleTypeKeys(){
+  const partner = isPartner(currentOwnerId());
+  if(partner) return [...PARTNER_TYPE_KEYS, 'other'];
+  return Object.keys(TYPES).filter(k=>k!=='teacher_service' && !TYPES[k].partner);
+}
+
 function renderTypeTabs(){
   const wrap = document.getElementById('typeTabs');
-  wrap.innerHTML = Object.keys(TYPES).filter(k=>k!=='teacher_service').map(k=>
+  const keys = visibleTypeKeys();
+  if(!keys.includes(currentType) && !editingRecordId){ currentType = keys[0]; }
+  wrap.innerHTML = keys.map(k=>
     `<button type="button" data-type="${k}" class="${k===currentType?'active':''}">${TYPES[k].label}</button>`
   ).join('');
   wrap.querySelectorAll('button').forEach(btn=>{
@@ -565,9 +667,35 @@ function renderTypeTabs(){
       renderTypeTabs(); applyFieldVisibility();
       if(currentType==='antiaging'){ prefillAntiagingAmount(); }
       if(currentType==='referral'){ prefillReferralAmount(); }
+      renderPmenuSelect();
+      if(currentType==='p_freckle'){ prefillFreckleRate(); }
       updatePreview();
     });
   });
+}
+
+function renderPmenuSelect(){
+  const sel = document.getElementById('f_pmenu');
+  if(!sel) return;
+  const items = PARTNER_MENUS[currentType] || [];
+  const prev = sel.value;
+  sel.innerHTML = items.map(i=>`<option value="${escapeHtml(i.name)}">${escapeHtml(i.name)}（RM${i.fee}）</option>`).join('');
+  if(items.some(i=>i.name===prev)) sel.value = prev;
+  document.getElementById('f_pmenu_label').textContent =
+    currentType==='p_lash' ? '美睫服务项目' : currentType==='p_facial' ? '美容服务项目' : currentType==='p_franchise' ? '加盟配套' : '项目';
+}
+
+function prefillFreckleRate(){
+  const rate = freckleTierRate(document.getElementById('f_amount').value);
+  const hint = document.getElementById('f_prate_hint');
+  if(rate===null){
+    document.getElementById('f_prate').value = '';
+    hint.textContent = '金额不在 RM10,000–RM150,000 之间，或多人邀约/共同成交时，比例需公司书面确认后手动填写。';
+  } else {
+    document.getElementById('f_prate').value = rate;
+    hint.textContent = 'RM10,000–50,000：5%　|　50,000 以上–80,000：8%　|　80,000 以上–150,000：10%（全额按同一比例）';
+  }
+  updatePreview();
 }
 
 function prefillAntiagingAmount(){
@@ -610,7 +738,7 @@ function prefillReferralAmount(){
 
 function applyFieldVisibility(){
   const cfg = TYPES[currentType];
-  const allGroups = ['source','client','closed','product','referral','lash_special','amount'];
+  const allGroups = ['source','client','closed','product','referral','lash_special','amount','pmenu','prate'];
   const lashSpecialOn = currentType==='lash' && document.getElementById('f_lash_special').checked;
   allGroups.forEach(g=>{
     const el = document.querySelector(`[data-group="${g}"]`);
@@ -640,6 +768,14 @@ function applyFieldVisibility(){
     label.textContent = '服务金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='invite'){
     label.textContent = '本次面诊成交业绩 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
+  } else if(currentType==='p_product'){
+    label.textContent = '产品实际收款金额 (RM，折后实收)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
+  } else if(currentType==='p_topup'){
+    label.textContent = '实际充值金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
+  } else if(currentType==='p_freckle'){
+    label.textContent = '项目实际成交金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
+  } else if(currentType==='p_profit'){
+    label.textContent = '可分配净利润 (RM，实收扣除事先确认的直接成本)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else {
     label.textContent = '金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   }
@@ -717,6 +853,19 @@ function updatePreview(){
       lines.push({label:'公司抽成 42%', val: amt*0.42});
       lines.push({label:'技术总监 28%', val: amt*0.28});
     }
+  } else if(PARTNER_MENUS[currentType]){
+    const item = document.getElementById('f_pmenu').value;
+    lines.push({label:`${TYPES[currentType].label}：${item||'请选择项目'}`, val: partnerMenuFee(currentType, item)});
+  } else if(currentType==='p_product'){
+    lines.push({label:'销售提成 10%', val: amt*0.10});
+  } else if(currentType==='p_topup'){
+    lines.push({label:'充值成交提成 5%', val: amt*0.05});
+  } else if(currentType==='p_freckle'){
+    const rate = Number(document.getElementById('f_prate').value)||0;
+    lines.push({label:`邀约奖励 ${fmtPct(rate)}`, val: amt*rate/100});
+  } else if(currentType==='p_profit'){
+    lines.push({label:'合作伙伴 50%', val: amt*0.5});
+    lines.push({label:'公司 50%', val: amt*0.5});
   }
   box.innerHTML = lines.map(l=>`<div class="row"><span>${l.label}</span><span class="num">${fmt(l.val)}</span></div>`).join('');
 }
@@ -775,6 +924,21 @@ async function submitRecord(){
     if(!rec.amount){ errEl.textContent = '请填写服务金额。'; return; }
     if(rec.source==='self'){ rec.provider_id = ownerId; }
     else { rec.referrer_id = ownerId; rec.director = document.getElementById('f_director').value.trim(); }
+  } else if(PARTNER_MENUS[currentType]){
+    rec.person_id = ownerId;
+    rec.product_name = document.getElementById('f_pmenu').value;
+    rec.amount = partnerMenuFee(currentType, rec.product_name);
+    if(!rec.product_name || !rec.amount){ errEl.textContent = '请选择项目。'; return; }
+  } else if(['p_product','p_topup','p_profit'].includes(currentType)){
+    rec.person_id = ownerId;
+    rec.amount = Number(document.getElementById('f_amount').value)||0;
+    if(!rec.amount){ errEl.textContent = '请填写金额。'; return; }
+  } else if(currentType==='p_freckle'){
+    rec.person_id = ownerId;
+    rec.amount = Number(document.getElementById('f_amount').value)||0;
+    rec.rate = Number(document.getElementById('f_prate').value)||0;
+    if(!rec.amount){ errEl.textContent = '请填写项目实际成交金额。'; return; }
+    if(!rec.rate){ errEl.textContent = '请填写奖励比例（超出 RM10,000–150,000 时需公司确认）。'; return; }
   }
 
   let error;
@@ -803,6 +967,10 @@ async function submitRecord(){
 }
 
 function startEditRecord(rec){
+  // Set the owner first: the visible type tabs depend on whether the owner is a partner.
+  if(document.getElementById('f_owner')){
+    document.getElementById('f_owner').value = recordPrimaryPersonId(rec) || currentProfile.id;
+  }
   currentType = rec.type;
   document.getElementById('f_lash_special').checked = !!(rec.type==='lash' && Number(rec.rate)===70);
   renderTypeTabs();
@@ -844,6 +1012,14 @@ function startEditRecord(rec){
     applyFieldVisibility();
     if(rec.source==='company'){ document.getElementById('f_director').value = rec.director || ''; }
     document.getElementById('f_amount').value = rec.amount || '';
+  } else if(PARTNER_MENUS[rec.type]){
+    renderPmenuSelect();
+    document.getElementById('f_pmenu').value = rec.productName || '';
+  } else if(['p_product','p_topup','p_profit'].includes(rec.type)){
+    document.getElementById('f_amount').value = rec.amount || '';
+  } else if(rec.type==='p_freckle'){
+    document.getElementById('f_amount').value = rec.amount || '';
+    document.getElementById('f_prate').value = rec.rate || '';
   }
 
   editingRecordId = rec.id;
