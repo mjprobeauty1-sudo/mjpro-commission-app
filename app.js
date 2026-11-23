@@ -6,30 +6,30 @@ function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':
 function uid(){return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2);}
 
 const OP_TYPES = [
-  {key:'facial',   field:'facialRate',   label:'润颜术', rateLabel:'润颜术手工费'},
-  {key:'lash',     field:'lashRate',     label:'睫毛',   rateLabel:'睫毛手工费'},
-  {key:'icepoint', field:'icepointRate', label:'冰点',   rateLabel:'冰点手工费'}
+  {key:'facial',   field:'facialRate',   label:'Ê∂¶È¢úÊúØ', rateLabel:'Ê∂¶È¢úÊúØÊâãÂ∑•Ë¥π'},
+  {key:'lash',     field:'lashRate',     label:'Áù´ÊØõ',   rateLabel:'Áù´ÊØõÊâãÂ∑•Ë¥π'},
+  {key:'icepoint', field:'icepointRate', label:'ÂÜ∞ÁÇπ',   rateLabel:'ÂÜ∞ÁÇπÊâãÂ∑•Ë¥π'}
 ];
 const OP_TYPE_KEYS = OP_TYPES.map(o=>o.key);
 
 const TYPES = {
-  invite:  { label:'邀约',                 groups:['client','closed'] },
+  invite:  { label:'ÈÇÄÁ∫¶',                 groups:['client','closed'] },
   ...Object.fromEntries(OP_TYPES.map(o=>[o.key, { label:o.label, groups:['client'] }])),
-  antiaging:{ label:'抗衰',                groups:['client','product','amount'] },
-  care:    { label:'润颜术VIP套餐',  groups:['client','amount'] },
-  review:  { label:'客户Review点评',       groups:['client'] },
-  tattoo:  { label:'纹绣服务',             groups:['source','client','amount'] },
-  referral:{ label:'引流服务',             groups:['client','referral','amount'] },
-  other:   { label:'其他',                 groups:['client','amount'] },
-  teacher_service: { label:'抗衰手工项目（老师）', groups:[] },
-  // 美业自由合作伙伴计划制度（2026 年版）— only shown for people in PARTNER_NAMES
-  p_lash:      { label:'美睫手工费',        groups:['client','pmenu'],          partner:true },
-  p_facial:    { label:'美容手工费',        groups:['client','pmenu'],          partner:true },
-  p_product:   { label:'皮肤管理产品 10%',  groups:['client','amount'],         partner:true },
-  p_topup:     { label:'会员卡充值 5%',     groups:['client','amount'],         partner:true },
-  p_franchise: { label:'棠美加盟奖励',      groups:['client','pmenu'],          partner:true },
-  p_freckle:   { label:'祛斑邀约奖励',      groups:['client','amount','prate'], partner:true },
-  p_profit:    { label:'自开发客户 5/5',    groups:['client','amount'],         partner:true }
+  antiaging:{ label:'ÊäóË°∞',                groups:['client','product','amount'] },
+  care:    { label:'Ê∂¶È¢úÊúØVIPÂ•óÈ§ê',  groups:['client','amount'] },
+  review:  { label:'ÂÆ¢Êà∑ReviewÁÇπËØÑ',       groups:['client'] },
+  tattoo:  { label:'Á∫πÁª£ÊúçÂä°',             groups:['source','client','amount'] },
+  referral:{ label:'ÂºïÊµÅÊúçÂä°',             groups:['client','referral','amount'] },
+  other:   { label:'ÂÖ∂‰ªñ',                 groups:['client','amount'] },
+  teacher_service: { label:'ÊäóË°∞ÊâãÂ∑•È°πÁõÆÔºàËÄÅÂ∏àÔºâ', groups:[] },
+  // Áæé‰∏öËá™Áî±Âêà‰Ωú‰ºô‰º¥ËÆ°ÂàíÂà∂Â∫¶Ôºà2026 Âπ¥ÁâàÔºâ‚Äî only shown for people in PARTNER_NAMES
+  p_lash:      { label:'ÁæéÁù´ÊâãÂ∑•Ë¥π',        groups:['client','pmenu'],          partner:true },
+  p_facial:    { label:'ÁæéÂÆπÊâãÂ∑•Ë¥π',        groups:['client','pmenu'],          partner:true },
+  p_product:   { label:'ÁöÆËÇ§ÁÆ°ÁêÜ‰∫ßÂìÅ 15%',  groups:['client','amount'],         partner:true },
+  p_topup:     { label:'‰ºöÂëòÂç°ÂÖÖÂÄº 5%',     groups:['client','amount'],         partner:true },
+  p_franchise: { label:'Ê£†ÁæéÂä†ÁõüÂ•ñÂä±',      groups:['client','pmenu'],          partner:true },
+  p_freckle:   { label:'Á•õÊñëÈÇÄÁ∫¶Â•ñÂä±',      groups:['client','amount','prate'], partner:true },
+  p_profit:    { label:'Ëá™ÂºÄÂèëÂÆ¢Êà∑ 5/5',    groups:['client','amount'],         partner:true }
 };
 const PARTNER_TYPE_KEYS = Object.keys(TYPES).filter(k=>TYPES[k].partner);
 // Matched against the profile name, case-insensitive. Add another name here to put that person on the partner program.
@@ -42,30 +42,30 @@ function isPartner(personId){
 // Fixed amounts from the partner program. The amount is saved on each record, so later changes here don't alter old records.
 const PARTNER_MENUS = {
   p_lash: [
-    {name:'引流睫毛新客户', fee:40},
-    {name:'RM128 基础款', fee:50},
-    {name:'RM208 高级定制款', fee:60},
-    {name:'下睫毛', fee:10},
-    {name:'卸睫毛', fee:10}
+    {name:'ÂºïÊµÅÁù´ÊØõÊñ∞ÂÆ¢Êà∑', fee:40},
+    {name:'RM128 Âü∫Á°ÄÊ¨æ', fee:50},
+    {name:'RM208 È´òÁ∫ßÂÆöÂà∂Ê¨æ', fee:60},
+    {name:'‰∏ãÁù´ÊØõ', fee:10},
+    {name:'Âç∏Áù´ÊØõ', fee:10}
   ],
   p_facial: [
-    {name:'引流美容新客户', fee:40},
-    {name:'RM128 基础清洁', fee:50},
-    {name:'RM198 深层清洁', fee:60},
-    {name:'RM298 Medic 护理', fee:80}
+    {name:'ÂºïÊµÅÁæéÂÆπÊñ∞ÂÆ¢Êà∑', fee:40},
+    {name:'RM128 Âü∫Á°ÄÊ∏ÖÊ¥Å', fee:50},
+    {name:'RM198 Ê∑±Â±ÇÊ∏ÖÊ¥Å', fee:60},
+    {name:'RM298 Medic Êä§ÁêÜ', fee:80}
   ],
   p_franchise: [
-    {name:'RM6,868 代颜人', fee:350},
-    {name:'RM12,868 团长', fee:650},
+    {name:'RM6,868 ‰ª£È¢ú‰∫∫', fee:350},
+    {name:'RM12,868 Âõ¢Èïø', fee:650},
     {name:'RM45,868 CEO', fee:2000},
-    {name:'RM145,868 事业部', fee:5000}
+    {name:'RM145,868 ‰∫ã‰∏öÈÉ®', fee:5000}
   ]
 };
 function partnerMenuFee(type, itemName){
   const item = (PARTNER_MENUS[type]||[]).find(i=>i.name===itemName);
   return item ? item.fee : 0;
 }
-// 祛斑邀约: the whole amount uses one rate by band. Outside RM10,000–150,000 the company sets the rate by hand.
+// Á•õÊñëÈÇÄÁ∫¶: the whole amount uses one rate by band. Outside RM10,000‚Äì150,000 the company sets the rate by hand.
 function freckleTierRate(amount){
   const a = Number(amount)||0;
   if(a>=10000 && a<=50000) return 5;
@@ -77,32 +77,32 @@ const ANTIAGING_OPFEE_VALUE_PREFIX = 'opfee:';
 const ANTIAGING_PRODUCT_VALUE_PREFIX = 'product:';
 
 const TEACHER_CATEGORIES = [
-  { key:'qz', label:'液态祛皱(QZ)', items:[
-    {name:'抬头纹', fee:60},
-    {name:'川字纹', fee:60},
-    {name:'眼下细纹', fee:60},
-    {name:'鱼尾纹', fee:60},
-    {name:'美人线', fee:60},
-    {name:'上庭小拉皮', fee:60},
-    {name:'眼综合（提眉/提眼角/提眼眶）', fee:60},
-    {name:'全脸祛皱', fee:300}
+  { key:'qz', label:'Ê∂≤ÊÄÅÁ•õÁö±(QZ)', items:[
+    {name:'Êä¨Â§¥Á∫π', fee:60},
+    {name:'Â∑ùÂ≠óÁ∫π', fee:60},
+    {name:'Áúº‰∏ãÁªÜÁ∫π', fee:60},
+    {name:'È±ºÂ∞æÁ∫π', fee:60},
+    {name:'Áæé‰∫∫Á∫ø', fee:60},
+    {name:'‰∏äÂ∫≠Â∞èÊãâÁöÆ', fee:60},
+    {name:'ÁúºÁªºÂêàÔºàÊèêÁúâ/ÊèêÁúºËßí/ÊèêÁúºÁú∂Ôºâ', fee:60},
+    {name:'ÂÖ®ËÑ∏Á•õÁö±', fee:300}
   ]},
-  { key:'xb', label:'细胞激活(XB)-X', items:[
-    {name:'川字纹', fee:65},
-    {name:'额头精雕', fee:150},
-    {name:'法令纹激活', fee:90},
-    {name:'太阳穴精雕', fee:150},
-    {name:'脸颊精雕', fee:150},
-    {name:'眼袋/泪沟修复', fee:90},
-    {name:'印堂（命宫）', fee:90},
-    {name:'印第安纹/苹果肌', fee:90},
-    {name:'富贵耳', fee:90},
-    {name:'鼻基底', fee:90},
-    {name:'木偶纹', fee:90},
-    {name:'全脸打造', fee:700}
+  { key:'xb', label:'ÁªÜËÉûÊøÄÊ¥ª(XB)-X', items:[
+    {name:'Â∑ùÂ≠óÁ∫π', fee:65},
+    {name:'È¢ùÂ§¥Á≤æÈõï', fee:150},
+    {name:'Ê≥ï‰ª§Á∫πÊøÄÊ¥ª', fee:90},
+    {name:'Â§™Èò≥Á©¥Á≤æÈõï', fee:150},
+    {name:'ËÑ∏È¢äÁ≤æÈõï', fee:150},
+    {name:'ÁúºË¢ã/Ê≥™Ê≤ü‰øÆÂ§ç', fee:90},
+    {name:'Âç∞Â†ÇÔºàÂëΩÂÆ´Ôºâ', fee:90},
+    {name:'Âç∞Á¨¨ÂÆâÁ∫π/ËãπÊûúËÇå', fee:90},
+    {name:'ÂØåË¥µËÄ≥', fee:90},
+    {name:'ÈºªÂü∫Â∫ï', fee:90},
+    {name:'Êú®ÂÅ∂Á∫π', fee:90},
+    {name:'ÂÖ®ËÑ∏ÊâìÈÄ†', fee:700}
   ]},
-  { key:'jy', label:'胶原支架(JY)', items:[
-    {name:'外轮廓固定', fee:50, perUnit:true, unitLabel:'支'}
+  { key:'jy', label:'ËÉ∂ÂéüÊîØÊû∂(JY)', items:[
+    {name:'Â§ñËΩÆÂªìÂõ∫ÂÆö', fee:50, perUnit:true, unitLabel:'ÊîØ'}
   ]}
 ];
 function teacherFindItem(catKey, itemName){
@@ -136,12 +136,12 @@ function teacherDiscountAmount(baseAmount, discountType, discountValue){
 }
 function teacherItemLabel(productNameVal){
   const { found, discountType, discountValue, qty } = teacherParseProductName(productNameVal);
-  if(!found) return productNameVal||'—';
+  if(!found) return productNameVal||'‚Äî';
   let discountText = '';
   if(discountValue>0){
-    discountText = discountType==='rm' ? `（减RM${discountValue}）` : `（打${(100-discountValue)/10}折）`;
+    discountText = discountType==='rm' ? `ÔºàÂáèRM${discountValue}Ôºâ` : `ÔºàÊâì${(100-discountValue)/10}ÊäòÔºâ`;
   }
-  const qtyText = (found.item.perUnit && qty>1) ? ` × ${qty}${found.item.unitLabel||'支'}` : '';
+  const qtyText = (found.item.perUnit && qty>1) ? ` √ó ${qty}${found.item.unitLabel||'ÊîØ'}` : '';
   return `${found.cat.label}-${found.item.name}${qtyText}${discountText}`;
 }
 
@@ -184,17 +184,17 @@ let bonusItems = [];
 let currentPayday = null;
 
 function roleLabel(role){
-  return role==='admin' ? '管理员' : role==='teacher' ? '技术老师' : '员工';
+  return role==='admin' ? 'ÁÆ°ÁêÜÂëò' : role==='teacher' ? 'ÊäÄÊúØËÄÅÂ∏à' : 'ÂëòÂ∑•';
 }
 
-const STATUS_LABELS = { pending:'待审核', reviewed:'已审核', paid:'已结算' };
+const STATUS_LABELS = { pending:'ÂæÖÂÆ°Ê†∏', reviewed:'Â∑≤ÂÆ°Ê†∏', paid:'Â∑≤ÁªìÁÆó' };
 function statusLabel(status){ return STATUS_LABELS[status] || STATUS_LABELS.pending; }
 function statusClass(status){ return (status==='paid'||status==='reviewed') ? status : 'pending'; }
 
 function personName(id){
-  if(!id) return '—';
+  if(!id) return '‚Äî';
   const p = people.find(p=>p.id===id);
-  return p ? p.name : '未知';
+  return p ? p.name : 'Êú™Áü•';
 }
 
 function personalAdTotals(monthRecs){
@@ -209,18 +209,18 @@ function allocationsFor(record, adRateByPerson){
   const amt = Number(record.amount)||0;
   switch(record.type){
     case 'invite': {
-      const allocs = [{who:personName(record.personId), role:'邀约费 RM20', amount:20}];
+      const allocs = [{who:personName(record.personId), role:'ÈÇÄÁ∫¶Ë¥π RM20', amount:20}];
       if(record.closed && amt>0){
         const rate = adRateByPerson[record.personId]||0;
-        allocs.push({who:personName(record.personId), role:`面诊成交提成 ${fmtPct(rate*100)}（月度阶梯）`, amount: amt*rate});
+        allocs.push({who:personName(record.personId), role:`Èù¢ËØäÊàê‰∫§ÊèêÊàê ${fmtPct(rate*100)}ÔºàÊúàÂ∫¶Èò∂Ê¢ØÔºâ`, amount: amt*rate});
       }
       return allocs;
     }
     case 'facial': case 'lash': case 'icepoint': {
       if(record.type==='lash' && Number(record.rate)===70){
         return [
-          {who:personName(record.personId), role:'睫毛特别分成（本人70%）', amount: amt*0.7},
-          {who:'公司', role:'睫毛特别分成（公司30%）', amount: amt*0.3}
+          {who:personName(record.personId), role:'Áù´ÊØõÁâπÂà´ÂàÜÊàêÔºàÊú¨‰∫∫70%Ôºâ', amount: amt*0.7},
+          {who:'ÂÖ¨Âè∏', role:'Áù´ÊØõÁâπÂà´ÂàÜÊàêÔºàÂÖ¨Âè∏30%Ôºâ', amount: amt*0.3}
         ];
       }
       const op = OP_TYPES.find(o=>o.key===record.type);
@@ -235,39 +235,39 @@ function allocationsFor(record, adRateByPerson){
         const item = antiagingOpItems.find(i=>i.name===itemName);
         if(item && item.split){
           return [
-            {who:personName(record.personId), role:`抗衰-${itemName}（对半，本人）`, amount: amt/2},
-            {who:'公司', role:`抗衰-${itemName}（对半，公司）`, amount: amt/2}
+            {who:personName(record.personId), role:`ÊäóË°∞-${itemName}ÔºàÂØπÂçäÔºåÊú¨‰∫∫Ôºâ`, amount: amt/2},
+            {who:'ÂÖ¨Âè∏', role:`ÊäóË°∞-${itemName}ÔºàÂØπÂçäÔºåÂÖ¨Âè∏Ôºâ`, amount: amt/2}
           ];
         }
-        return [{who:personName(record.personId), role:`抗衰-${itemName}（操作费）`, amount: amt}];
+        return [{who:personName(record.personId), role:`ÊäóË°∞-${itemName}ÔºàÊìç‰ΩúË¥πÔºâ`, amount: amt}];
       }
       const productName = val.startsWith(ANTIAGING_PRODUCT_VALUE_PREFIX) ? val.slice(ANTIAGING_PRODUCT_VALUE_PREFIX.length) : val;
-      return [{who:personName(record.personId), role: productName ? `抗衰-${productName} 提成` : '抗衰（未选项目）', amount: amt}];
+      return [{who:personName(record.personId), role: productName ? `ÊäóË°∞-${productName} ÊèêÊàê` : 'ÊäóË°∞ÔºàÊú™ÈÄâÈ°πÁõÆÔºâ', amount: amt}];
     }
     case 'referral': {
-      return [{who:personName(record.personId), role: record.productName ? `引流-${record.productName} 操作费` : '引流操作费', amount: amt}];
+      return [{who:personName(record.personId), role: record.productName ? `ÂºïÊµÅ-${record.productName} Êìç‰ΩúË¥π` : 'ÂºïÊµÅÊìç‰ΩúË¥π', amount: amt}];
     }
     case 'other': {
-      return [{who:personName(record.personId), role: record.note ? `其他-${record.note}` : '其他项目', amount: amt}];
+      return [{who:personName(record.personId), role: record.note ? `ÂÖ∂‰ªñ-${record.note}` : 'ÂÖ∂‰ªñÈ°πÁõÆ', amount: amt}];
     }
     case 'care': {
       const eligible = amt>=1000;
-      return [{who:personName(record.personId), role: eligible?'润护理/产品套盒成交费 5%':'润护理/产品套盒（未满RM1000，不计提成）', amount: eligible? amt*0.05:0}];
+      return [{who:personName(record.personId), role: eligible?'Ê∂¶Êä§ÁêÜ/‰∫ßÂìÅÂ•óÁõíÊàê‰∫§Ë¥π 5%':'Ê∂¶Êä§ÁêÜ/‰∫ßÂìÅÂ•óÁõíÔºàÊú™Êª°RM1000Ôºå‰∏çËÆ°ÊèêÊàêÔºâ', amount: eligible? amt*0.05:0}];
     }
     case 'review': {
-      return [{who:personName(record.personId), role:'Review点评奖励', amount: amt}];
+      return [{who:personName(record.personId), role:'ReviewÁÇπËØÑÂ•ñÂä±', amount: amt}];
     }
     case 'tattoo': {
       if(record.source==='self'){
         return [
-          {who:personName(record.providerId), role:'纹绣自招 90%', amount: amt*0.9},
-          {who:'公司', role:'公司抽成 10%', amount: amt*0.1}
+          {who:personName(record.providerId), role:'Á∫πÁª£Ëá™Êãõ 90%', amount: amt*0.9},
+          {who:'ÂÖ¨Âè∏', role:'ÂÖ¨Âè∏ÊäΩÊàê 10%', amount: amt*0.1}
         ];
       } else {
         return [
-          {who:personName(record.referrerId), role:'合作推荐费 30%', amount: amt*0.3},
-          {who:'公司', role:'公司抽成 42%', amount: amt*0.42},
-          {who:record.director||'技术总监', role:'技术总监 / Director 28%', amount: amt*0.28}
+          {who:personName(record.referrerId), role:'Âêà‰ΩúÊé®ËçêË¥π 30%', amount: amt*0.3},
+          {who:'ÂÖ¨Âè∏', role:'ÂÖ¨Âè∏ÊäΩÊàê 42%', amount: amt*0.42},
+          {who:record.director||'ÊäÄÊúØÊÄªÁõë', role:'ÊäÄÊúØÊÄªÁõë / Director 28%', amount: amt*0.28}
         ];
       }
     }
@@ -275,25 +275,25 @@ function allocationsFor(record, adRateByPerson){
       return [{who:personName(record.personId), role:teacherItemLabel(record.productName), amount: amt}];
     }
     case 'p_lash': case 'p_facial': {
-      return [{who:personName(record.personId), role:`${TYPES[record.type].label}-${record.productName||'未选项目'}`, amount: amt}];
+      return [{who:personName(record.personId), role:`${TYPES[record.type].label}-${record.productName||'Êú™ÈÄâÈ°πÁõÆ'}`, amount: amt}];
     }
     case 'p_product': {
-      return [{who:personName(record.personId), role:'皮肤管理产品销售提成 10%', amount: amt*0.10}];
+      return [{who:personName(record.personId), role:'ÁöÆËÇ§ÁÆ°ÁêÜ‰∫ßÂìÅÈîÄÂîÆÊèêÊàê 15%', amount: amt*0.15}];
     }
     case 'p_topup': {
-      return [{who:personName(record.personId), role:'会员卡充值成交提成 5%', amount: amt*0.05}];
+      return [{who:personName(record.personId), role:'‰ºöÂëòÂç°ÂÖÖÂÄºÊàê‰∫§ÊèêÊàê 5%', amount: amt*0.05}];
     }
     case 'p_franchise': {
-      return [{who:personName(record.personId), role:`棠美加盟奖励-${record.productName||'未选配套'}`, amount: amt}];
+      return [{who:personName(record.personId), role:`Ê£†ÁæéÂä†ÁõüÂ•ñÂä±-${record.productName||'Êú™ÈÄâÈÖçÂ•ó'}`, amount: amt}];
     }
     case 'p_freckle': {
       const rate = Number(record.rate)||0;
-      return [{who:personName(record.personId), role:`祛斑邀约奖励 ${fmtPct(rate)}`, amount: amt*rate/100}];
+      return [{who:personName(record.personId), role:`Á•õÊñëÈÇÄÁ∫¶Â•ñÂä± ${fmtPct(rate)}`, amount: amt*rate/100}];
     }
     case 'p_profit': {
       return [
-        {who:personName(record.personId), role:'自开发客户净利润（合作伙伴 50%）', amount: amt*0.5},
-        {who:'公司', role:'自开发客户净利润（公司 50%）', amount: amt*0.5}
+        {who:personName(record.personId), role:'Ëá™ÂºÄÂèëÂÆ¢Êà∑ÂáÄÂà©Ê∂¶ÔºàÂêà‰Ωú‰ºô‰º¥ 50%Ôºâ', amount: amt*0.5},
+        {who:'ÂÖ¨Âè∏', role:'Ëá™ÂºÄÂèëÂÆ¢Êà∑ÂáÄÂà©Ê∂¶ÔºàÂÖ¨Âè∏ 50%Ôºâ', amount: amt*0.5}
       ];
     }
     default: return [];
@@ -307,20 +307,20 @@ function recordDetailText(r){
     if(val.startsWith(ANTIAGING_OPFEE_VALUE_PREFIX)) parts.push(val.slice(ANTIAGING_OPFEE_VALUE_PREFIX.length));
     else if(val.startsWith(ANTIAGING_PRODUCT_VALUE_PREFIX)) parts.push(val.slice(ANTIAGING_PRODUCT_VALUE_PREFIX.length));
   }
-  if(r.type==='invite'){ parts.push(r.closed ? '已成交' : '未成交'); }
+  if(r.type==='invite'){ parts.push(r.closed ? 'Â∑≤Êàê‰∫§' : 'Êú™Êàê‰∫§'); }
   if(r.type==='referral' && r.productName){ parts.push(r.productName); }
-  if(r.type==='tattoo'){ parts.push(r.source==='self' ? '自招客户' : '公司客源'); }
+  if(r.type==='tattoo'){ parts.push(r.source==='self' ? 'Ëá™ÊãõÂÆ¢Êà∑' : 'ÂÖ¨Âè∏ÂÆ¢Ê∫ê'); }
   if(PARTNER_MENUS[r.type] && r.productName){ parts.push(r.productName); }
-  if(r.type==='p_freckle'){ parts.push(`奖励比例 ${fmtPct(r.rate)}`); }
+  if(r.type==='p_freckle'){ parts.push(`Â•ñÂä±ÊØî‰æã ${fmtPct(r.rate)}`); }
   if(r.note) parts.push(r.note);
-  return parts.join(' · ') || '—';
+  return parts.join(' ¬∑ ') || '‚Äî';
 }
 
 // ---------------- Login ----------------
 async function initLogin(){
   const { data, error } = await sb.rpc('list_login_names');
   const sel = document.getElementById('loginName');
-  if(error){ document.getElementById('loginError').textContent = '读取人员名单失败：'+error.message; return; }
+  if(error){ document.getElementById('loginError').textContent = 'ËØªÂèñ‰∫∫ÂëòÂêçÂçïÂ§±Ë¥•Ôºö'+error.message; return; }
   sel.innerHTML = (data||[]).map(p=>`<option value="${p.id}" data-email="${escapeHtml(p.email)}">${escapeHtml(p.name)}</option>`).join('');
 }
 
@@ -330,10 +330,10 @@ document.getElementById('loginBtn').addEventListener('click', async ()=>{
   const pin = document.getElementById('loginPin').value.trim();
   const errEl = document.getElementById('loginError');
   errEl.textContent = '';
-  if(!opt || !pin){ errEl.textContent = '请选择姓名并输入 PIN。'; return; }
+  if(!opt || !pin){ errEl.textContent = 'ËØ∑ÈÄâÊã©ÂßìÂêçÂπ∂ËæìÂÖ• PIN„ÄÇ'; return; }
   const email = opt.getAttribute('data-email');
   const { error } = await sb.auth.signInWithPassword({ email, password: pin });
-  if(error){ errEl.textContent = 'PIN 不对，请再试一次。'; return; }
+  if(error){ errEl.textContent = 'PIN ‰∏çÂØπÔºåËØ∑ÂÜçËØï‰∏ÄÊ¨°„ÄÇ'; return; }
   await bootApp();
 });
 
@@ -343,12 +343,12 @@ document.getElementById('logoutBtn').addEventListener('click', async ()=>{
 });
 
 document.getElementById('changePinBtn').addEventListener('click', async ()=>{
-  const newPin = prompt('输入新的 6 位数字 PIN：');
+  const newPin = prompt('ËæìÂÖ•Êñ∞ÁöÑ 6 ‰ΩçÊï∞Â≠ó PINÔºö');
   if(newPin===null) return;
-  if(!/^\d{6}$/.test(newPin)){ alert('PIN 必须是 6 位数字。'); return; }
+  if(!/^\d{6}$/.test(newPin)){ alert('PIN ÂøÖÈ°ªÊòØ 6 ‰ΩçÊï∞Â≠ó„ÄÇ'); return; }
   const { error } = await sb.auth.updateUser({ password: newPin });
-  if(error){ alert('修改失败：'+error.message); return; }
-  alert('PIN 修改成功，下次登录请用这个新的 PIN。');
+  if(error){ alert('‰øÆÊîπÂ§±Ë¥•Ôºö'+error.message); return; }
+  alert('PIN ‰øÆÊîπÊàêÂäüÔºå‰∏ãÊ¨°ÁôªÂΩïËØ∑Áî®Ëøô‰∏™Êñ∞ÁöÑ PIN„ÄÇ');
 });
 
 // ---------------- Boot ----------------
@@ -356,13 +356,13 @@ async function bootApp(){
   const { data: sess } = await sb.auth.getSession();
   if(!sess.session){ return; }
   const { data: profile, error } = await sb.from('profiles').select('*').eq('id', sess.session.user.id).single();
-  if(error || !profile){ document.getElementById('loginError').textContent = '找不到你的资料，联系管理员。'; return; }
+  if(error || !profile){ document.getElementById('loginError').textContent = 'Êâæ‰∏çÂà∞‰Ω†ÁöÑËµÑÊñôÔºåËÅîÁ≥ªÁÆ°ÁêÜÂëò„ÄÇ'; return; }
   currentProfile = mapProfile(profile);
 
   document.getElementById('loginView').style.display = 'none';
   document.getElementById('appView').style.display = '';
-  document.getElementById('userChip').textContent = `${currentProfile.name}（${roleLabel(currentProfile.role)}）`;
-  document.getElementById('pageTitle').textContent = currentProfile.role==='admin' ? '团队提成管理' : (currentProfile.role==='teacher' ? '老师手工费' : '我的提成');
+  document.getElementById('userChip').textContent = `${currentProfile.name}Ôºà${roleLabel(currentProfile.role)}Ôºâ`;
+  document.getElementById('pageTitle').textContent = currentProfile.role==='admin' ? 'Âõ¢ÈòüÊèêÊàêÁÆ°ÁêÜ' : (currentProfile.role==='teacher' ? 'ËÄÅÂ∏àÊâãÂ∑•Ë¥π' : 'ÊàëÁöÑÊèêÊàê');
 
   const now = new Date();
   document.getElementById('monthPicker').value = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
@@ -495,7 +495,7 @@ async function renderAll(){
   }catch(e){
     console.error('renderAll failed:', e);
     const errEl = document.getElementById(currentProfile.role==='teacher' ? 'addTeacherRecordError' : 'addRecordError');
-    if(errEl) errEl.textContent = '画面刷新失败：'+e.message+'（记录可能已经存进去了，请刷新页面确认）';
+    if(errEl) errEl.textContent = 'ÁîªÈù¢Âà∑Êñ∞Â§±Ë¥•Ôºö'+e.message+'ÔºàËÆ∞ÂΩïÂèØËÉΩÂ∑≤ÁªèÂ≠òËøõÂéª‰∫ÜÔºåËØ∑Âà∑Êñ∞È°µÈù¢Á°ÆËÆ§Ôºâ';
   }
 }
 
@@ -504,82 +504,82 @@ function buildStaffSection(){
   const el = document.getElementById('staffSection');
   el.innerHTML = `
     <div class="panel">
-      <h2>新增记录</h2>
-      ${currentProfile.role==='admin' ? `<div class="field"><label for="f_owner">记录归属人（可以帮团队补登）</label><select id="f_owner"></select></div>` : ''}
+      <h2>Êñ∞Â¢ûËÆ∞ÂΩï</h2>
+      ${currentProfile.role==='admin' ? `<div class="field"><label for="f_owner">ËÆ∞ÂΩïÂΩíÂ±û‰∫∫ÔºàÂèØ‰ª•Â∏ÆÂõ¢ÈòüË°•ÁôªÔºâ</label><select id="f_owner"></select></div>` : ''}
       <div class="type-tabs" id="typeTabs"></div>
-      <div class="field"><label for="f_date">日期</label><input type="date" id="f_date" /></div>
+      <div class="field"><label for="f_date">Êó•Êúü</label><input type="date" id="f_date" /></div>
 
       <div data-group="source" style="display:none;">
-        <div class="field"><label for="f_source">客户来源</label>
+        <div class="field"><label for="f_source">ÂÆ¢Êà∑Êù•Ê∫ê</label>
           <select id="f_source">
-            <option value="self">自招客户（服务师 90% / 公司 10%）</option>
-            <option value="company">公司客源 / 广告 / 推荐（推荐人 30% / 公司 42% / 技术总监 28%）</option>
+            <option value="self">Ëá™ÊãõÂÆ¢Êà∑ÔºàÊúçÂä°Â∏à 90% / ÂÖ¨Âè∏ 10%Ôºâ</option>
+            <option value="company">ÂÖ¨Âè∏ÂÆ¢Ê∫ê / ÂπøÂëä / Êé®ËçêÔºàÊé®Ëçê‰∫∫ 30% / ÂÖ¨Âè∏ 42% / ÊäÄÊúØÊÄªÁõë 28%Ôºâ</option>
           </select>
         </div>
         <div class="field" id="directorField" style="display:none;">
-          <label for="f_director">技术总监 / Director</label>
-          <input type="text" id="f_director" placeholder="姓名" />
+          <label for="f_director">ÊäÄÊúØÊÄªÁõë / Director</label>
+          <input type="text" id="f_director" placeholder="ÂßìÂêç" />
         </div>
       </div>
 
       <div data-group="client" style="display:none;">
-        <div class="field"><label for="f_client">客户名称</label><input type="text" id="f_client" placeholder="选填" /></div>
+        <div class="field"><label for="f_client">ÂÆ¢Êà∑ÂêçÁß∞</label><input type="text" id="f_client" placeholder="ÈÄâÂ°´" /></div>
       </div>
 
       <div data-group="lash_special" style="display:none;">
         <div class="field" style="flex-direction:row;align-items:center;gap:8px;">
           <input type="checkbox" id="f_lash_special" style="width:auto;" />
-          <label for="f_lash_special" style="margin:0;">特别分成（70%本人 / 30%公司，自己填金额，备注写清楚原因）</label>
+          <label for="f_lash_special" style="margin:0;">ÁâπÂà´ÂàÜÊàêÔºà70%Êú¨‰∫∫ / 30%ÂÖ¨Âè∏ÔºåËá™Â∑±Â°´ÈáëÈ¢ùÔºåÂ§áÊ≥®ÂÜôÊ∏ÖÊ•öÂéüÂõ†Ôºâ</label>
         </div>
       </div>
 
       <div data-group="closed" style="display:none;">
         <div class="field" style="flex-direction:row;align-items:center;gap:8px;">
           <input type="checkbox" id="f_closed" style="width:auto;" />
-          <label for="f_closed" style="margin:0;">已成交（成功邀约至总部由老师面诊成交）</label>
+          <label for="f_closed" style="margin:0;">Â∑≤Êàê‰∫§ÔºàÊàêÂäüÈÇÄÁ∫¶Ëá≥ÊÄªÈÉ®Áî±ËÄÅÂ∏àÈù¢ËØäÊàê‰∫§Ôºâ</label>
         </div>
       </div>
 
       <div data-group="product" style="display:none;">
-        <div class="field"><label for="f_product">抗衰项目</label><select id="f_product"></select></div>
+        <div class="field"><label for="f_product">ÊäóË°∞È°πÁõÆ</label><select id="f_product"></select></div>
       </div>
 
       <div data-group="referral" style="display:none;">
-        <div class="field"><label for="f_referral">引流服务项目</label><select id="f_referral"></select></div>
+        <div class="field"><label for="f_referral">ÂºïÊµÅÊúçÂä°È°πÁõÆ</label><select id="f_referral"></select></div>
         <div class="field" style="flex-direction:row;align-items:center;gap:8px;">
           <input type="checkbox" id="f_referral_served" style="width:auto;" checked />
-          <label for="f_referral_served" style="margin:0;">本次有服务客人（算技术服务费）</label>
+          <label for="f_referral_served" style="margin:0;">Êú¨Ê¨°ÊúâÊúçÂä°ÂÆ¢‰∫∫ÔºàÁÆóÊäÄÊúØÊúçÂä°Ë¥πÔºâ</label>
         </div>
         <div class="field" id="f_referral_qty_field">
-          <label for="f_referral_qty">服务人数</label>
+          <label for="f_referral_qty">ÊúçÂä°‰∫∫Êï∞</label>
           <input type="number" id="f_referral_qty" min="1" step="1" value="1" style="max-width:100px;" />
         </div>
         <div class="field" style="flex-direction:row;align-items:center;gap:8px;">
           <input type="checkbox" id="f_referral_invite" style="width:auto;" />
-          <label for="f_referral_invite" style="margin:0;">邀约人（邀约费）</label>
+          <label for="f_referral_invite" style="margin:0;">ÈÇÄÁ∫¶‰∫∫ÔºàÈÇÄÁ∫¶Ë¥πÔºâ</label>
         </div>
       </div>
 
       <div data-group="pmenu" style="display:none;">
-        <div class="field"><label id="f_pmenu_label" for="f_pmenu">项目</label><select id="f_pmenu"></select></div>
+        <div class="field"><label id="f_pmenu_label" for="f_pmenu">È°πÁõÆ</label><select id="f_pmenu"></select></div>
       </div>
 
       <div data-group="amount" style="display:none;">
-        <div class="field"><label id="f_amount_label" for="f_amount">金额 (RM)</label><input type="number" id="f_amount" min="0" step="0.01" placeholder="0.00" /></div>
+        <div class="field"><label id="f_amount_label" for="f_amount">ÈáëÈ¢ù (RM)</label><input type="number" id="f_amount" min="0" step="0.01" placeholder="0.00" /></div>
       </div>
 
       <div data-group="prate" style="display:none;">
-        <div class="field"><label for="f_prate">奖励比例 (%)</label><input type="number" id="f_prate" min="0" max="100" step="0.5" style="max-width:120px;" />
+        <div class="field"><label for="f_prate">Â•ñÂä±ÊØî‰æã (%)</label><input type="number" id="f_prate" min="0" max="100" step="0.5" style="max-width:120px;" />
           <p class="hint" id="f_prate_hint"></p>
         </div>
       </div>
 
       <div class="preview-commission" id="commissionPreview"></div>
 
-      <div class="field"><label for="f_note">备注</label><input type="text" id="f_note" placeholder="选填" /></div>
+      <div class="field"><label for="f_note">Â§áÊ≥®</label><input type="text" id="f_note" placeholder="ÈÄâÂ°´" /></div>
       <div style="display:flex;gap:8px;">
-        <button class="primary" id="addRecordBtn" style="width:100%;">记录入账</button>
-        <button id="cancelEditBtn" style="display:none;white-space:nowrap;">取消编辑</button>
+        <button class="primary" id="addRecordBtn" style="width:100%;">ËÆ∞ÂΩïÂÖ•Ë¥¶</button>
+        <button id="cancelEditBtn" style="display:none;white-space:nowrap;">ÂèñÊ∂àÁºñËæë</button>
       </div>
       <p class="error-text" id="addRecordError"></p>
     </div>
@@ -643,11 +643,11 @@ function currentOwnerId(){
 
 function exitEditMode(){
   editingRecordId = null;
-  document.getElementById('addRecordBtn').textContent = '记录入账';
+  document.getElementById('addRecordBtn').textContent = 'ËÆ∞ÂΩïÂÖ•Ë¥¶';
   document.getElementById('cancelEditBtn').style.display = 'none';
 }
 
-// Partners (see PARTNER_NAMES) get the partner program types plus 其他; everyone else keeps the usual types.
+// Partners (see PARTNER_NAMES) get the partner program types plus ÂÖ∂‰ªñ; everyone else keeps the usual types.
 function visibleTypeKeys(){
   const partner = isPartner(currentOwnerId());
   if(partner) return [...PARTNER_TYPE_KEYS, 'other'];
@@ -679,10 +679,10 @@ function renderPmenuSelect(){
   if(!sel) return;
   const items = PARTNER_MENUS[currentType] || [];
   const prev = sel.value;
-  sel.innerHTML = items.map(i=>`<option value="${escapeHtml(i.name)}">${escapeHtml(i.name)}（RM${i.fee}）</option>`).join('');
+  sel.innerHTML = items.map(i=>`<option value="${escapeHtml(i.name)}">${escapeHtml(i.name)}ÔºàRM${i.fee}Ôºâ</option>`).join('');
   if(items.some(i=>i.name===prev)) sel.value = prev;
   document.getElementById('f_pmenu_label').textContent =
-    currentType==='p_lash' ? '美睫服务项目' : currentType==='p_facial' ? '美容服务项目' : currentType==='p_franchise' ? '加盟配套' : '项目';
+    currentType==='p_lash' ? 'ÁæéÁù´ÊúçÂä°È°πÁõÆ' : currentType==='p_facial' ? 'ÁæéÂÆπÊúçÂä°È°πÁõÆ' : currentType==='p_franchise' ? 'Âä†ÁõüÈÖçÂ•ó' : 'È°πÁõÆ';
 }
 
 function prefillFreckleRate(){
@@ -690,10 +690,10 @@ function prefillFreckleRate(){
   const hint = document.getElementById('f_prate_hint');
   if(rate===null){
     document.getElementById('f_prate').value = '';
-    hint.textContent = '金额不在 RM10,000–RM150,000 之间，或多人邀约/共同成交时，比例需公司书面确认后手动填写。';
+    hint.textContent = 'ÈáëÈ¢ù‰∏çÂú® RM10,000‚ÄìRM150,000 ‰πãÈó¥ÔºåÊàñÂ§ö‰∫∫ÈÇÄÁ∫¶/ÂÖ±ÂêåÊàê‰∫§Êó∂ÔºåÊØî‰æãÈúÄÂÖ¨Âè∏‰π¶Èù¢Á°ÆËÆ§ÂêéÊâãÂä®Â°´ÂÜô„ÄÇ';
   } else {
     document.getElementById('f_prate').value = rate;
-    hint.textContent = 'RM10,000–50,000：5%　|　50,000 以上–80,000：8%　|　80,000 以上–150,000：10%（全额按同一比例）';
+    hint.textContent = 'RM10,000‚Äì50,000Ôºö5%„ÄÄ|„ÄÄ50,000 ‰ª•‰∏ä‚Äì80,000Ôºö8%„ÄÄ|„ÄÄ80,000 ‰ª•‰∏ä‚Äì150,000Ôºö10%ÔºàÂÖ®È¢ùÊåâÂêå‰∏ÄÊØî‰æãÔºâ';
   }
   updatePreview();
 }
@@ -755,43 +755,43 @@ function applyFieldVisibility(){
   const label = document.getElementById('f_amount_label');
   amountInput.readOnly = (currentType==='referral');
   if(currentType==='antiaging'){
-    label.textContent = '本次金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
+    label.textContent = 'Êú¨Ê¨°ÈáëÈ¢ù (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='referral'){
-    label.textContent = '合计金额 (RM，固定金额，自动带出)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
+    label.textContent = 'ÂêàËÆ°ÈáëÈ¢ù (RMÔºåÂõ∫ÂÆöÈáëÈ¢ùÔºåËá™Âä®Â∏¶Âá∫)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='lash' && lashSpecialOn){
-    label.textContent = '操作费 (RM，70/30分)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
+    label.textContent = 'Êìç‰ΩúË¥π (RMÔºå70/30ÂàÜ)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='other'){
-    label.textContent = '金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
+    label.textContent = 'ÈáëÈ¢ù (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='care'){
-    label.textContent = '订单金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
+    label.textContent = 'ËÆ¢ÂçïÈáëÈ¢ù (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='tattoo'){
-    label.textContent = '服务金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
+    label.textContent = 'ÊúçÂä°ÈáëÈ¢ù (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='invite'){
-    label.textContent = '本次面诊成交业绩 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
+    label.textContent = 'Êú¨Ê¨°Èù¢ËØäÊàê‰∫§‰∏öÁª© (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='p_product'){
-    label.textContent = '产品实际收款金额 (RM，折后实收)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
+    label.textContent = '‰∫ßÂìÅÂÆûÈôÖÊî∂Ê¨æÈáëÈ¢ù (RMÔºåÊäòÂêéÂÆûÊî∂)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='p_topup'){
-    label.textContent = '实际充值金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
+    label.textContent = 'ÂÆûÈôÖÂÖÖÂÄºÈáëÈ¢ù (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='p_freckle'){
-    label.textContent = '项目实际成交金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
+    label.textContent = 'È°πÁõÆÂÆûÈôÖÊàê‰∫§ÈáëÈ¢ù (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else if(currentType==='p_profit'){
-    label.textContent = '可分配净利润 (RM，实收扣除事先确认的直接成本)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
+    label.textContent = 'ÂèØÂàÜÈÖçÂáÄÂà©Ê∂¶ (RMÔºåÂÆûÊî∂Êâ£Èô§‰∫ãÂÖàÁ°ÆËÆ§ÁöÑÁõ¥Êé•ÊàêÊú¨)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   } else {
-    label.textContent = '金额 (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
+    label.textContent = 'ÈáëÈ¢ù (RM)'; amountInput.min=0; amountInput.removeAttribute('max'); amountInput.step=0.01;
   }
 }
 
 function renderProductSelect(){
   const sel = document.getElementById('f_product');
-  const opOpts = antiagingOpItems.map(i=>`<option value="${ANTIAGING_OPFEE_VALUE_PREFIX}${escapeHtml(i.name)}">${escapeHtml(i.name)}（操作费）</option>`).join('');
-  const productOpts = antiAgingProducts.map(p=>`<option value="${ANTIAGING_PRODUCT_VALUE_PREFIX}${escapeHtml(p.name)}">${escapeHtml(p.name)}（RM${p.commission} 提成）</option>`).join('');
-  sel.innerHTML = opOpts + productOpts || '<option value="">先请管理员添加抗衰项目</option>';
+  const opOpts = antiagingOpItems.map(i=>`<option value="${ANTIAGING_OPFEE_VALUE_PREFIX}${escapeHtml(i.name)}">${escapeHtml(i.name)}ÔºàÊìç‰ΩúË¥πÔºâ</option>`).join('');
+  const productOpts = antiAgingProducts.map(p=>`<option value="${ANTIAGING_PRODUCT_VALUE_PREFIX}${escapeHtml(p.name)}">${escapeHtml(p.name)}ÔºàRM${p.commission} ÊèêÊàêÔºâ</option>`).join('');
+  sel.innerHTML = opOpts + productOpts || '<option value="">ÂÖàËØ∑ÁÆ°ÁêÜÂëòÊ∑ªÂä†ÊäóË°∞È°πÁõÆ</option>';
 }
 
 function renderReferralSelect(){
   const sel = document.getElementById('f_referral');
   sel.innerHTML = referralItems.map(i=>`<option value="${escapeHtml(i.name)}">${escapeHtml(i.name)}</option>`).join('')
-    || '<option value="">先请管理员添加引流服务项目</option>';
+    || '<option value="">ÂÖàËØ∑ÁÆ°ÁêÜÂëòÊ∑ªÂä†ÂºïÊµÅÊúçÂä°È°πÁõÆ</option>';
 }
 
 function updatePreview(){
@@ -799,18 +799,18 @@ function updatePreview(){
   const amt = Number(document.getElementById('f_amount').value)||0;
   let lines = [];
   if(currentType==='invite'){
-    lines.push({label:'邀约费（不论是否成交）', val:20});
+    lines.push({label:'ÈÇÄÁ∫¶Ë¥πÔºà‰∏çËÆ∫ÊòØÂê¶Êàê‰∫§Ôºâ', val:20});
     if(document.getElementById('f_closed').checked){
       const ownerId = currentOwnerId();
       const ym = document.getElementById('monthPicker').value;
       const existing = records.filter(r=>r.type==='invite' && r.closed && r.personId===ownerId && r.date.slice(0,7)===ym)
         .reduce((s,r)=>s+(Number(r.amount)||0),0);
       const tRate = tierRate(existing+amt, PERSONAL_AD_TIERS);
-      lines.push({label:`面诊成交提成 ${fmtPct(tRate*100)}（按本人当月累计业绩阶梯）`, val: amt*tRate});
+      lines.push({label:`Èù¢ËØäÊàê‰∫§ÊèêÊàê ${fmtPct(tRate*100)}ÔºàÊåâÊú¨‰∫∫ÂΩìÊúàÁ¥ØËÆ°‰∏öÁª©Èò∂Ê¢ØÔºâ`, val: amt*tRate});
     }
   } else if(currentType==='lash' && document.getElementById('f_lash_special').checked){
-    lines.push({label:'特别分成（本人 70%）', val: amt*0.7});
-    lines.push({label:'特别分成（公司 30%）', val: amt*0.3});
+    lines.push({label:'ÁâπÂà´ÂàÜÊàêÔºàÊú¨‰∫∫ 70%Ôºâ', val: amt*0.7});
+    lines.push({label:'ÁâπÂà´ÂàÜÊàêÔºàÂÖ¨Âè∏ 30%Ôºâ', val: amt*0.3});
   } else if(OP_TYPE_KEYS.includes(currentType)){
     const op = OP_TYPES.find(o=>o.key===currentType);
     const ownerProfile = people.find(p=>p.id===currentOwnerId());
@@ -822,50 +822,50 @@ function updatePreview(){
       const itemName = val.slice(ANTIAGING_OPFEE_VALUE_PREFIX.length);
       const item = antiagingOpItems.find(i=>i.name===itemName);
       if(item && item.split){
-        lines.push({label:`${itemName}（对半，本人）`, val: amt/2});
-        lines.push({label:`${itemName}（对半，公司）`, val: amt/2});
+        lines.push({label:`${itemName}ÔºàÂØπÂçäÔºåÊú¨‰∫∫Ôºâ`, val: amt/2});
+        lines.push({label:`${itemName}ÔºàÂØπÂçäÔºåÂÖ¨Âè∏Ôºâ`, val: amt/2});
       } else {
-        lines.push({label:`${itemName} 操作费`, val: amt});
+        lines.push({label:`${itemName} Êìç‰ΩúË¥π`, val: amt});
       }
     } else {
       const productName = val.startsWith(ANTIAGING_PRODUCT_VALUE_PREFIX) ? val.slice(ANTIAGING_PRODUCT_VALUE_PREFIX.length) : val;
-      lines.push({label: productName?`${productName} 提成`:'抗衰提成', val: amt});
+      lines.push({label: productName?`${productName} ÊèêÊàê`:'ÊäóË°∞ÊèêÊàê', val: amt});
     }
   } else if(currentType==='referral'){
     const b = referralAmountBreakdown();
-    if(b.served) lines.push({label: `${b.itemName||'引流'} 技术服务费${b.qty>1?`×${b.qty}人`:''}`, val: b.serviceFee});
-    if(b.invite) lines.push({label: `${b.itemName||'引流'} 邀约费`, val: b.inviteAmount});
-    if(!b.served && !b.invite) lines.push({label:'请勾选服务客人或邀约人其中一项', val:0});
+    if(b.served) lines.push({label: `${b.itemName||'ÂºïÊµÅ'} ÊäÄÊúØÊúçÂä°Ë¥π${b.qty>1?`√ó${b.qty}‰∫∫`:''}`, val: b.serviceFee});
+    if(b.invite) lines.push({label: `${b.itemName||'ÂºïÊµÅ'} ÈÇÄÁ∫¶Ë¥π`, val: b.inviteAmount});
+    if(!b.served && !b.invite) lines.push({label:'ËØ∑ÂãæÈÄâÊúçÂä°ÂÆ¢‰∫∫ÊàñÈÇÄÁ∫¶‰∫∫ÂÖ∂‰∏≠‰∏ÄÈ°π', val:0});
   } else if(currentType==='other'){
-    lines.push({label:'其他项目金额（备注写清楚，方便管理员处理）', val: amt});
+    lines.push({label:'ÂÖ∂‰ªñÈ°πÁõÆÈáëÈ¢ùÔºàÂ§áÊ≥®ÂÜôÊ∏ÖÊ•öÔºåÊñπ‰æøÁÆ°ÁêÜÂëòÂ§ÑÁêÜÔºâ', val: amt});
   } else if(currentType==='care'){
     const eligible = amt>=1000;
-    lines.push({label: eligible?'成交费 5%':'未满 RM1000，不计提成', val: eligible?amt*0.05:0});
+    lines.push({label: eligible?'Êàê‰∫§Ë¥π 5%':'Êú™Êª° RM1000Ôºå‰∏çËÆ°ÊèêÊàê', val: eligible?amt*0.05:0});
   } else if(currentType==='review'){
-    lines.push({label:'点评奖励（后台设定金额）', val: settings.reviewDefaultAmount});
+    lines.push({label:'ÁÇπËØÑÂ•ñÂä±ÔºàÂêéÂè∞ËÆæÂÆöÈáëÈ¢ùÔºâ', val: settings.reviewDefaultAmount});
   } else if(currentType==='tattoo'){
     const src = document.getElementById('f_source').value;
     if(src==='self'){
-      lines.push({label:'服务师 90%', val: amt*0.9});
-      lines.push({label:'公司抽成 10%', val: amt*0.1});
+      lines.push({label:'ÊúçÂä°Â∏à 90%', val: amt*0.9});
+      lines.push({label:'ÂÖ¨Âè∏ÊäΩÊàê 10%', val: amt*0.1});
     } else {
-      lines.push({label:'推荐人 30%', val: amt*0.3});
-      lines.push({label:'公司抽成 42%', val: amt*0.42});
-      lines.push({label:'技术总监 28%', val: amt*0.28});
+      lines.push({label:'Êé®Ëçê‰∫∫ 30%', val: amt*0.3});
+      lines.push({label:'ÂÖ¨Âè∏ÊäΩÊàê 42%', val: amt*0.42});
+      lines.push({label:'ÊäÄÊúØÊÄªÁõë 28%', val: amt*0.28});
     }
   } else if(PARTNER_MENUS[currentType]){
     const item = document.getElementById('f_pmenu').value;
-    lines.push({label:`${TYPES[currentType].label}：${item||'请选择项目'}`, val: partnerMenuFee(currentType, item)});
+    lines.push({label:`${TYPES[currentType].label}Ôºö${item||'ËØ∑ÈÄâÊã©È°πÁõÆ'}`, val: partnerMenuFee(currentType, item)});
   } else if(currentType==='p_product'){
-    lines.push({label:'销售提成 10%', val: amt*0.10});
+    lines.push({label:'ÈîÄÂîÆÊèêÊàê 15%', val: amt*0.15});
   } else if(currentType==='p_topup'){
-    lines.push({label:'充值成交提成 5%', val: amt*0.05});
+    lines.push({label:'ÂÖÖÂÄºÊàê‰∫§ÊèêÊàê 5%', val: amt*0.05});
   } else if(currentType==='p_freckle'){
     const rate = Number(document.getElementById('f_prate').value)||0;
-    lines.push({label:`邀约奖励 ${fmtPct(rate)}`, val: amt*rate/100});
+    lines.push({label:`ÈÇÄÁ∫¶Â•ñÂä± ${fmtPct(rate)}`, val: amt*rate/100});
   } else if(currentType==='p_profit'){
-    lines.push({label:'合作伙伴 50%', val: amt*0.5});
-    lines.push({label:'公司 50%', val: amt*0.5});
+    lines.push({label:'Âêà‰Ωú‰ºô‰º¥ 50%', val: amt*0.5});
+    lines.push({label:'ÂÖ¨Âè∏ 50%', val: amt*0.5});
   }
   box.innerHTML = lines.map(l=>`<div class="row"><span>${l.label}</span><span class="num">${fmt(l.val)}</span></div>`).join('');
 }
@@ -876,7 +876,7 @@ async function submitRecord(){
   const date = document.getElementById('f_date').value;
   const client = document.getElementById('f_client').value.trim();
   const note = document.getElementById('f_note').value.trim();
-  if(!date){ errEl.textContent = '请填写日期。'; return; }
+  if(!date){ errEl.textContent = 'ËØ∑Â°´ÂÜôÊó•Êúü„ÄÇ'; return; }
 
   const ownerId = currentOwnerId();
   const rec = { type:currentType, date, client, note };
@@ -886,59 +886,59 @@ async function submitRecord(){
     rec.person_id = ownerId;
     rec.closed = document.getElementById('f_closed').checked;
     rec.amount = rec.closed ? (Number(document.getElementById('f_amount').value)||0) : 0;
-    if(rec.closed && !rec.amount){ errEl.textContent = '已勾选「已成交」，请填写面诊成交业绩金额。'; return; }
+    if(rec.closed && !rec.amount){ errEl.textContent = 'Â∑≤ÂãæÈÄâ„ÄåÂ∑≤Êàê‰∫§„ÄçÔºåËØ∑Â°´ÂÜôÈù¢ËØäÊàê‰∫§‰∏öÁª©ÈáëÈ¢ù„ÄÇ'; return; }
   } else if(currentType==='lash' && document.getElementById('f_lash_special').checked){
     rec.person_id = ownerId;
     rec.rate = 70;
     rec.amount = Number(document.getElementById('f_amount').value)||0;
-    if(!rec.amount){ errEl.textContent = '请填写操作费金额。'; return; }
-    if(!rec.note){ errEl.textContent = '特别分成需要在备注写清楚原因。'; return; }
+    if(!rec.amount){ errEl.textContent = 'ËØ∑Â°´ÂÜôÊìç‰ΩúË¥πÈáëÈ¢ù„ÄÇ'; return; }
+    if(!rec.note){ errEl.textContent = 'ÁâπÂà´ÂàÜÊàêÈúÄË¶ÅÂú®Â§áÊ≥®ÂÜôÊ∏ÖÊ•öÂéüÂõ†„ÄÇ'; return; }
   } else if(OP_TYPE_KEYS.includes(currentType)){
     rec.person_id = ownerId;
   } else if(currentType==='antiaging'){
     rec.person_id = ownerId;
     rec.product_name = document.getElementById('f_product').value;
     rec.amount = Number(document.getElementById('f_amount').value)||0;
-    if(!rec.product_name || !rec.amount){ errEl.textContent = '请选择抗衰项目并填写金额。'; return; }
+    if(!rec.product_name || !rec.amount){ errEl.textContent = 'ËØ∑ÈÄâÊã©ÊäóË°∞È°πÁõÆÂπ∂Â°´ÂÜôÈáëÈ¢ù„ÄÇ'; return; }
   } else if(currentType==='referral'){
     rec.person_id = ownerId;
     rec.product_name = document.getElementById('f_referral').value;
     rec.amount = Number(document.getElementById('f_amount').value)||0;
-    if(!rec.product_name){ errEl.textContent = '请选择引流服务项目。'; return; }
-    if(!rec.amount){ errEl.textContent = '金额是0，请勾选「服务客人」或「邀约人」其中一项。'; return; }
+    if(!rec.product_name){ errEl.textContent = 'ËØ∑ÈÄâÊã©ÂºïÊµÅÊúçÂä°È°πÁõÆ„ÄÇ'; return; }
+    if(!rec.amount){ errEl.textContent = 'ÈáëÈ¢ùÊòØ0ÔºåËØ∑ÂãæÈÄâ„ÄåÊúçÂä°ÂÆ¢‰∫∫„ÄçÊàñ„ÄåÈÇÄÁ∫¶‰∫∫„ÄçÂÖ∂‰∏≠‰∏ÄÈ°π„ÄÇ'; return; }
   } else if(currentType==='other'){
     rec.person_id = ownerId;
     rec.amount = Number(document.getElementById('f_amount').value)||0;
-    if(!rec.note){ errEl.textContent = '请在备注写清楚这是什么项目，方便管理员处理。'; return; }
-    if(!rec.amount){ errEl.textContent = '请填写金额。'; return; }
+    if(!rec.note){ errEl.textContent = 'ËØ∑Âú®Â§áÊ≥®ÂÜôÊ∏ÖÊ•öËøôÊòØ‰ªÄ‰πàÈ°πÁõÆÔºåÊñπ‰æøÁÆ°ÁêÜÂëòÂ§ÑÁêÜ„ÄÇ'; return; }
+    if(!rec.amount){ errEl.textContent = 'ËØ∑Â°´ÂÜôÈáëÈ¢ù„ÄÇ'; return; }
   } else if(currentType==='care'){
     rec.person_id = ownerId;
     rec.amount = Number(document.getElementById('f_amount').value)||0;
-    if(!rec.amount){ errEl.textContent = '请填写订单金额。'; return; }
+    if(!rec.amount){ errEl.textContent = 'ËØ∑Â°´ÂÜôËÆ¢ÂçïÈáëÈ¢ù„ÄÇ'; return; }
   } else if(currentType==='review'){
     rec.person_id = ownerId;
     rec.amount = settings.reviewDefaultAmount;
   } else if(currentType==='tattoo'){
     rec.source = document.getElementById('f_source').value;
     rec.amount = Number(document.getElementById('f_amount').value)||0;
-    if(!rec.amount){ errEl.textContent = '请填写服务金额。'; return; }
+    if(!rec.amount){ errEl.textContent = 'ËØ∑Â°´ÂÜôÊúçÂä°ÈáëÈ¢ù„ÄÇ'; return; }
     if(rec.source==='self'){ rec.provider_id = ownerId; }
     else { rec.referrer_id = ownerId; rec.director = document.getElementById('f_director').value.trim(); }
   } else if(PARTNER_MENUS[currentType]){
     rec.person_id = ownerId;
     rec.product_name = document.getElementById('f_pmenu').value;
     rec.amount = partnerMenuFee(currentType, rec.product_name);
-    if(!rec.product_name || !rec.amount){ errEl.textContent = '请选择项目。'; return; }
+    if(!rec.product_name || !rec.amount){ errEl.textContent = 'ËØ∑ÈÄâÊã©È°πÁõÆ„ÄÇ'; return; }
   } else if(['p_product','p_topup','p_profit'].includes(currentType)){
     rec.person_id = ownerId;
     rec.amount = Number(document.getElementById('f_amount').value)||0;
-    if(!rec.amount){ errEl.textContent = '请填写金额。'; return; }
+    if(!rec.amount){ errEl.textContent = 'ËØ∑Â°´ÂÜôÈáëÈ¢ù„ÄÇ'; return; }
   } else if(currentType==='p_freckle'){
     rec.person_id = ownerId;
     rec.amount = Number(document.getElementById('f_amount').value)||0;
     rec.rate = Number(document.getElementById('f_prate').value)||0;
-    if(!rec.amount){ errEl.textContent = '请填写项目实际成交金额。'; return; }
-    if(!rec.rate){ errEl.textContent = '请填写奖励比例（超出 RM10,000–150,000 时需公司确认）。'; return; }
+    if(!rec.amount){ errEl.textContent = 'ËØ∑Â°´ÂÜôÈ°πÁõÆÂÆûÈôÖÊàê‰∫§ÈáëÈ¢ù„ÄÇ'; return; }
+    if(!rec.rate){ errEl.textContent = 'ËØ∑Â°´ÂÜôÂ•ñÂä±ÊØî‰æãÔºàË∂ÖÂá∫ RM10,000‚Äì150,000 Êó∂ÈúÄÂÖ¨Âè∏Á°ÆËÆ§Ôºâ„ÄÇ'; return; }
   }
 
   let error;
@@ -947,7 +947,7 @@ async function submitRecord(){
   } else {
     ({ error } = await sb.from('records').insert(rec));
   }
-  if(error){ errEl.textContent = '保存失败：'+error.message; return; }
+  if(error){ errEl.textContent = '‰øùÂ≠òÂ§±Ë¥•Ôºö'+error.message; return; }
 
   const wasEditing = !!editingRecordId;
   exitEditMode();
@@ -1023,7 +1023,7 @@ function startEditRecord(rec){
   }
 
   editingRecordId = rec.id;
-  document.getElementById('addRecordBtn').textContent = '更新记录';
+  document.getElementById('addRecordBtn').textContent = 'Êõ¥Êñ∞ËÆ∞ÂΩï';
   document.getElementById('cancelEditBtn').style.display = '';
   updatePreview();
   document.getElementById('staffSection').scrollIntoView({behavior:'smooth', block:'start'});
@@ -1035,29 +1035,29 @@ function buildTeacherSection(){
   el.style.display = '';
   el.innerHTML = `
     <div class="panel">
-      <h2>新增手工费记录</h2>
-      <div class="field"><label for="t_date">日期</label><input type="date" id="t_date" /></div>
-      <div class="field"><label for="t_category">项目类别</label><select id="t_category"></select></div>
-      <div class="field"><label for="t_item">具体部位 / 项目</label><select id="t_item"></select></div>
+      <h2>Êñ∞Â¢ûÊâãÂ∑•Ë¥πËÆ∞ÂΩï</h2>
+      <div class="field"><label for="t_date">Êó•Êúü</label><input type="date" id="t_date" /></div>
+      <div class="field"><label for="t_category">È°πÁõÆÁ±ªÂà´</label><select id="t_category"></select></div>
+      <div class="field"><label for="t_item">ÂÖ∑‰ΩìÈÉ®‰Ωç / È°πÁõÆ</label><select id="t_item"></select></div>
       <div class="field" id="t_qty_field" style="display:none;">
-        <label for="t_qty" id="t_qty_label">数量</label>
+        <label for="t_qty" id="t_qty_label">Êï∞Èáè</label>
         <input type="number" id="t_qty" min="1" step="1" value="1" />
       </div>
-      <div class="field"><label for="t_client">客户名称</label><input type="text" id="t_client" placeholder="选填" /></div>
+      <div class="field"><label for="t_client">ÂÆ¢Êà∑ÂêçÁß∞</label><input type="text" id="t_client" placeholder="ÈÄâÂ°´" /></div>
       <div class="field">
-        <label for="t_discount">给顾客的折扣（选填）</label>
+        <label for="t_discount">ÁªôÈ°æÂÆ¢ÁöÑÊäòÊâ£ÔºàÈÄâÂ°´Ôºâ</label>
         <div style="display:flex;gap:8px;">
           <select id="t_discount_type" style="max-width:130px;">
-            <option value="pct">百分比 %</option>
-            <option value="rm">金额 RM</option>
+            <option value="pct">ÁôæÂàÜÊØî %</option>
+            <option value="rm">ÈáëÈ¢ù RM</option>
           </select>
           <input type="number" id="t_discount" min="0" step="0.01" placeholder="0" />
         </div>
-        <p class="hint" id="t_discount_hint">例如打9折，选「百分比」填 10（代表让了10%）；如果是直接减免一个金额，选「金额 RM」填要扣掉的数目。手工费会跟着扣，没有折扣就留空或填0。</p>
+        <p class="hint" id="t_discount_hint">‰æãÂ¶ÇÊâì9ÊäòÔºåÈÄâ„ÄåÁôæÂàÜÊØî„ÄçÂ°´ 10Ôºà‰ª£Ë°®ËÆ©‰∫Ü10%ÔºâÔºõÂ¶ÇÊûúÊòØÁõ¥Êé•ÂáèÂÖç‰∏Ä‰∏™ÈáëÈ¢ùÔºåÈÄâ„ÄåÈáëÈ¢ù RM„ÄçÂ°´Ë¶ÅÊâ£ÊéâÁöÑÊï∞ÁõÆ„ÄÇÊâãÂ∑•Ë¥π‰ºöË∑üÁùÄÊâ£ÔºåÊ≤°ÊúâÊäòÊâ£Â∞±ÁïôÁ©∫ÊàñÂ°´0„ÄÇ</p>
       </div>
       <div class="preview-commission" id="teacherCommissionPreview"></div>
-      <div class="field"><label for="t_note">备注</label><input type="text" id="t_note" placeholder="选填" /></div>
-      <button class="primary" id="addTeacherRecordBtn">记录入账</button>
+      <div class="field"><label for="t_note">Â§áÊ≥®</label><input type="text" id="t_note" placeholder="ÈÄâÂ°´" /></div>
+      <button class="primary" id="addTeacherRecordBtn">ËÆ∞ÂΩïÂÖ•Ë¥¶</button>
       <p class="error-text" id="addTeacherRecordError"></p>
     </div>
   `;
@@ -1080,7 +1080,7 @@ function renderTeacherItemSelect(){
   const catKey = document.getElementById('t_category').value;
   const cat = TEACHER_CATEGORIES.find(c=>c.key===catKey);
   const sel = document.getElementById('t_item');
-  sel.innerHTML = (cat?cat.items:[]).map(i=>`<option value="${escapeHtml(i.name)}">${escapeHtml(i.name)}（RM${i.fee}${i.perUnit?'/'+(i.unitLabel||'支'):''}）</option>`).join('');
+  sel.innerHTML = (cat?cat.items:[]).map(i=>`<option value="${escapeHtml(i.name)}">${escapeHtml(i.name)}ÔºàRM${i.fee}${i.perUnit?'/'+(i.unitLabel||'ÊîØ'):''}Ôºâ</option>`).join('');
   updateTeacherQtyVisibility();
 }
 
@@ -1096,7 +1096,7 @@ function updateTeacherQtyVisibility(){
   const show = !!(found && found.item.perUnit);
   qtyField.style.display = show ? '' : 'none';
   if(!show){ document.getElementById('t_qty').value = 1; }
-  else{ document.getElementById('t_qty_label').textContent = `${found.item.unitLabel||'支'}数`; }
+  else{ document.getElementById('t_qty_label').textContent = `${found.item.unitLabel||'ÊîØ'}Êï∞`; }
 }
 
 function currentTeacherQty(){
@@ -1129,12 +1129,12 @@ function updateTeacherPreview(){
   const discountAmount = teacherDiscountAmount(baseAmount, dType, dValue);
   const finalFee = baseAmount - discountAmount;
   if(dValue>0){
-    const discountLabel = dType==='rm' ? `折扣 -RM${dValue}` : `折扣 ${dValue}%`;
-    box.innerHTML = `<div class="row"><span>原价手工费</span><span class="num">${fmt(baseAmount)}</span></div>
+    const discountLabel = dType==='rm' ? `ÊäòÊâ£ -RM${dValue}` : `ÊäòÊâ£ ${dValue}%`;
+    box.innerHTML = `<div class="row"><span>Âéü‰ª∑ÊâãÂ∑•Ë¥π</span><span class="num">${fmt(baseAmount)}</span></div>
       <div class="row"><span>${discountLabel}</span><span class="num">-${fmt(discountAmount)}</span></div>
-      <div class="row"><span>实收手工费</span><span class="num">${fmt(finalFee)}</span></div>`;
+      <div class="row"><span>ÂÆûÊî∂ÊâãÂ∑•Ë¥π</span><span class="num">${fmt(finalFee)}</span></div>`;
   } else {
-    box.innerHTML = `<div class="row"><span>手工费</span><span class="num">${fmt(baseAmount)}</span></div>`;
+    box.innerHTML = `<div class="row"><span>ÊâãÂ∑•Ë¥π</span><span class="num">${fmt(baseAmount)}</span></div>`;
   }
 }
 
@@ -1149,9 +1149,9 @@ async function submitTeacherRecord(){
   const dValue = currentTeacherDiscountValue();
   const qty = currentTeacherQty();
   const note = document.getElementById('t_note').value.trim();
-  if(!date){ errEl.textContent = '请填写日期。'; return; }
+  if(!date){ errEl.textContent = 'ËØ∑Â°´ÂÜôÊó•Êúü„ÄÇ'; return; }
   const found = teacherFindItem(catKey, itemName);
-  if(!found){ errEl.textContent = '请选择项目类别和具体部位。'; return; }
+  if(!found){ errEl.textContent = 'ËØ∑ÈÄâÊã©È°πÁõÆÁ±ªÂà´ÂíåÂÖ∑‰ΩìÈÉ®‰Ωç„ÄÇ'; return; }
 
   const baseAmount = found.item.fee * qty;
   const discountAmount = teacherDiscountAmount(baseAmount, dType, dValue);
@@ -1163,7 +1163,7 @@ async function submitTeacherRecord(){
   };
 
   const { error } = await sb.from('records').insert(rec);
-  if(error){ errEl.textContent = '保存失败：'+error.message; return; }
+  if(error){ errEl.textContent = '‰øùÂ≠òÂ§±Ë¥•Ôºö'+error.message; return; }
 
   document.getElementById('t_client').value='';
   document.getElementById('t_discount').value='';
@@ -1183,8 +1183,8 @@ function renderMyTeacherRecords(){
     return `<tr>
       <td>${r.date}</td>
       <td>${escapeHtml(teacherItemLabel(r.productName))}</td>
-      <td>${escapeHtml(r.client||'—')}</td>
-      <td>${escapeHtml(r.note||'—')}</td>
+      <td>${escapeHtml(r.client||'‚Äî')}</td>
+      <td>${escapeHtml(r.note||'‚Äî')}</td>
       <td class="num" style="font-weight:600;">${fmt(amt)}</td>
       <td><span class="pill ${statusClass(r.status)}">${statusLabel(r.status)}</span></td>
     </tr>`;
@@ -1199,11 +1199,11 @@ function renderMyTeacherRecords(){
     el.appendChild(listWrap);
   }
   listWrap.innerHTML = `
-    <h2>我本月的记录</h2>
-    <div class="summary-strip"><div class="stat total"><p class="label">本月合计</p><p class="value num">${fmt(total)}</p></div></div>
+    <h2>ÊàëÊú¨ÊúàÁöÑËÆ∞ÂΩï</h2>
+    <div class="summary-strip"><div class="stat total"><p class="label">Êú¨ÊúàÂêàËÆ°</p><p class="value num">${fmt(total)}</p></div></div>
     <div class="table-scroll">
-      <table><thead><tr><th>日期</th><th>项目</th><th>客户</th><th>折扣/备注</th><th class="num">金额</th><th>状态</th></tr></thead>
-      <tbody>${rows || '<tr><td colspan="6" class="empty">本月还没有记录</td></tr>'}</tbody></table>
+      <table><thead><tr><th>Êó•Êúü</th><th>È°πÁõÆ</th><th>ÂÆ¢Êà∑</th><th>ÊäòÊâ£/Â§áÊ≥®</th><th class="num">ÈáëÈ¢ù</th><th>Áä∂ÊÄÅ</th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="6" class="empty">Êú¨ÊúàËøòÊ≤°ÊúâËÆ∞ÂΩï</td></tr>'}</tbody></table>
     </div>
   `;
 }
@@ -1222,7 +1222,7 @@ function renderMyRecords(){
     return `<tr>
       <td>${r.date}</td>
       <td>${TYPES[r.type].label}</td>
-      <td>${escapeHtml(r.client||'—')}</td>
+      <td>${escapeHtml(r.client||'‚Äî')}</td>
       <td>${escapeHtml(recordDetailText(r))}</td>
       <td class="num" style="font-weight:600;">${fmt(sum)}</td>
       <td><span class="pill ${statusClass(r.status)}">${statusLabel(r.status)}</span></td>
@@ -1238,11 +1238,11 @@ function renderMyRecords(){
     el.appendChild(listWrap);
   }
   listWrap.innerHTML = `
-    <h2>我本月的记录</h2>
-    <div class="summary-strip"><div class="stat total"><p class="label">本月合计</p><p class="value num">${fmt(total)}</p></div></div>
+    <h2>ÊàëÊú¨ÊúàÁöÑËÆ∞ÂΩï</h2>
+    <div class="summary-strip"><div class="stat total"><p class="label">Êú¨ÊúàÂêàËÆ°</p><p class="value num">${fmt(total)}</p></div></div>
     <div class="table-scroll">
-      <table><thead><tr><th>日期</th><th>类型</th><th>客户</th><th>项目 / 备注</th><th class="num">金额</th><th>状态</th></tr></thead>
-      <tbody>${rows || '<tr><td colspan="6" class="empty">本月还没有记录</td></tr>'}</tbody></table>
+      <table><thead><tr><th>Êó•Êúü</th><th>Á±ªÂûã</th><th>ÂÆ¢Êà∑</th><th>È°πÁõÆ / Â§áÊ≥®</th><th class="num">ÈáëÈ¢ù</th><th>Áä∂ÊÄÅ</th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="6" class="empty">Êú¨ÊúàËøòÊ≤°ÊúâËÆ∞ÂΩï</td></tr>'}</tbody></table>
     </div>
   `;
 }
@@ -1265,34 +1265,34 @@ function renderPayrollReport(){
   const rowNoBorder = (label, val) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;gap:12px;"><span style="font-size:13px;">${label}</span><span class="num" style="font-weight:600;">${fmt(val)}</span></div>`;
   const bonusRowsList = report.bonusItems.length
     ? report.bonusItems.map((b,i)=> i<report.bonusItems.length-1 ? row(escapeHtml(b.label||'Bonus'), b.amount) : rowNoBorder(escapeHtml(b.label||'Bonus'), b.amount)).join('')
-    : `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;gap:12px;"><span style="font-size:13px;">本月还没有Bonus项目</span><span class="num" style="font-weight:600;">—</span></div>`;
+    : `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;gap:12px;"><span style="font-size:13px;">Êú¨ÊúàËøòÊ≤°ÊúâBonusÈ°πÁõÆ</span><span class="num" style="font-weight:600;">‚Äî</span></div>`;
 
   wrap.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:20px;">
-      <h2 style="margin:0;">本月工资报告</h2>
-      ${currentPayday ? `<span class="pill paid">发薪日期 ${currentPayday}</span>` : ''}
+      <h2 style="margin:0;">Êú¨ÊúàÂ∑•ËµÑÊä•Âëä</h2>
+      ${currentPayday ? `<span class="pill paid">ÂèëËñ™Êó•Êúü ${currentPayday}</span>` : ''}
     </div>
 
-    ${sectionLabel('固定项目')}
-    ${plainCard(row('底薪', report.person.baseSalary) + rowNoBorder('津贴', report.person.allowance))}
+    ${sectionLabel('Âõ∫ÂÆöÈ°πÁõÆ')}
+    ${plainCard(row('Â∫ïËñ™', report.person.baseSalary) + rowNoBorder('Ê¥•Ë¥¥', report.person.allowance))}
 
-    ${sectionLabel('绩效与提成')}
+    ${sectionLabel('Áª©Êïà‰∏éÊèêÊàê')}
     ${plainCard(
-      row(`KPI奖金（达标率 ${report.kpiPct}%）`, report.kpiAmount) +
-      row('个人提成合计（sales + 手工服务 + 其他）', report.personalSales + report.handsOn) +
-      row(`达标bonus（邀约业绩 ${fmt(report.closedInviteTotal)} / ${fmt(report.targetThreshold)}）`, report.targetBonusAmount) +
-      rowNoBorder('Group Sales Bonus 合计', report.bonusTotal)
+      row(`KPIÂ•ñÈáëÔºàËææÊ†áÁéá ${report.kpiPct}%Ôºâ`, report.kpiAmount) +
+      row('‰∏™‰∫∫ÊèêÊàêÂêàËÆ°Ôºàsales + ÊâãÂ∑•ÊúçÂä° + ÂÖ∂‰ªñÔºâ', report.personalSales + report.handsOn) +
+      row(`ËææÊ†ábonusÔºàÈÇÄÁ∫¶‰∏öÁª© ${fmt(report.closedInviteTotal)} / ${fmt(report.targetThreshold)}Ôºâ`, report.targetBonusAmount) +
+      rowNoBorder('Group Sales Bonus ÂêàËÆ°', report.bonusTotal)
     )}
 
-    <div class="summary-strip" style="margin-bottom:20px;"><div class="stat total"><p class="label">本月合计</p><p class="value num">${fmt(report.total)}</p></div></div>
+    <div class="summary-strip" style="margin-bottom:20px;"><div class="stat total"><p class="label">Êú¨ÊúàÂêàËÆ°</p><p class="value num">${fmt(report.total)}</p></div></div>
 
     ${report.kpiGap>0 || report.targetBonusGap>0 ? `<div style="border-left:3px solid var(--warning);background:var(--warning-soft);border-radius:0 10px 10px 0;padding:12px 16px;margin-bottom:24px;">
-      <p style="font-size:12px;color:var(--warning);font-weight:600;margin:0 0 6px;">⚠️ 还差一点就能拿满</p>
-      ${report.kpiGap>0 ? `<p style="font-size:13px;color:var(--warning);margin:0 0 4px;">KPI还差 <b class="num">${fmt(report.kpiGap)}</b> 就能拿满档（达到95%以上）</p>` : ''}
-      ${report.targetBonusGap>0 ? `<p style="font-size:13px;color:var(--warning);margin:0;">邀约业绩还差 <b class="num">${fmt(report.targetThreshold-report.closedInviteTotal)}</b> 达标，就能拿到 ${fmt(report.targetPool)} 的达标bonus（目前未达标，没有这笔）</p>` : ''}
+      <p style="font-size:12px;color:var(--warning);font-weight:600;margin:0 0 6px;">‚ö†Ô∏è ËøòÂ∑Æ‰∏ÄÁÇπÂ∞±ËÉΩÊãøÊª°</p>
+      ${report.kpiGap>0 ? `<p style="font-size:13px;color:var(--warning);margin:0 0 4px;">KPIËøòÂ∑Æ <b class="num">${fmt(report.kpiGap)}</b> Â∞±ËÉΩÊãøÊª°Ê°£ÔºàËææÂà∞95%‰ª•‰∏äÔºâ</p>` : ''}
+      ${report.targetBonusGap>0 ? `<p style="font-size:13px;color:var(--warning);margin:0;">ÈÇÄÁ∫¶‰∏öÁª©ËøòÂ∑Æ <b class="num">${fmt(report.targetThreshold-report.closedInviteTotal)}</b> ËææÊ†áÔºåÂ∞±ËÉΩÊãøÂà∞ ${fmt(report.targetPool)} ÁöÑËææÊ†ábonusÔºàÁõÆÂâçÊú™ËææÊ†áÔºåÊ≤°ÊúâËøôÁ¨îÔºâ</p>` : ''}
     </div>` : ''}
 
-    ${sectionLabel('Group Sales Bonus 明细')}
+    ${sectionLabel('Group Sales Bonus ÊòéÁªÜ')}
     ${plainCard(bonusRowsList)}
   `;
 }
@@ -1302,134 +1302,134 @@ function buildAdminSection(){
   const el = document.getElementById('adminSection');
   el.innerHTML = `
     <div class="panel">
-      <h2>本月团队汇总</h2>
+      <h2>Êú¨ÊúàÂõ¢ÈòüÊ±áÊÄª</h2>
       <div class="summary-strip" id="adminSummaryStrip"></div>
     </div>
     <div class="panel">
-      <h2>团队人员</h2>
+      <h2>Âõ¢Èòü‰∫∫Âëò</h2>
       <div class="roster-chips" id="rosterChips"></div>
       <div class="add-row">
-        <input type="text" id="newPersonName" placeholder="姓名" />
-        <input type="text" id="newPersonPin" placeholder="初始PIN（6位数字）" maxlength="6" />
-        <select id="newPersonRole"><option value="staff">员工</option><option value="teacher">技术老师</option><option value="admin">管理员</option></select>
-        <button id="addPersonBtn">添加人员</button>
+        <input type="text" id="newPersonName" placeholder="ÂßìÂêç" />
+        <input type="text" id="newPersonPin" placeholder="ÂàùÂßãPINÔºà6‰ΩçÊï∞Â≠óÔºâ" maxlength="6" />
+        <select id="newPersonRole"><option value="staff">ÂëòÂ∑•</option><option value="teacher">ÊäÄÊúØËÄÅÂ∏à</option><option value="admin">ÁÆ°ÁêÜÂëò</option></select>
+        <button id="addPersonBtn">Ê∑ªÂä†‰∫∫Âëò</button>
       </div>
-      <p class="hint">新人第一次登录用这个初始PIN，之后可以自己改。</p>
+      <p class="hint">Êñ∞‰∫∫Á¨¨‰∏ÄÊ¨°ÁôªÂΩïÁî®Ëøô‰∏™ÂàùÂßãPINÔºå‰πãÂêéÂèØ‰ª•Ëá™Â∑±Êîπ„ÄÇ</p>
       <p class="error-text" id="addPersonError"></p>
     </div>
     <div class="panel">
-      <h2>薪资设置（底薪 / 津贴 / KPI 三档）</h2>
+      <h2>Ëñ™ËµÑËÆæÁΩÆÔºàÂ∫ïËñ™ / Ê¥•Ë¥¥ / KPI ‰∏âÊ°£Ôºâ</h2>
       <div class="field" style="max-width:220px;">
-        <label for="paydayInput">本月发薪日期</label>
+        <label for="paydayInput">Êú¨ÊúàÂèëËñ™Êó•Êúü</label>
         <input type="date" id="paydayInput" />
       </div>
-      <p class="hint" style="margin:0 0 10px;">「本月达标率%」是每个月你自己打分输入的，系统会照下面三档金额自动换算成KPI奖金。</p>
+      <p class="hint" style="margin:0 0 10px;">„ÄåÊú¨ÊúàËææÊ†áÁéá%„ÄçÊòØÊØè‰∏™Êúà‰Ω†Ëá™Â∑±ÊâìÂàÜËæìÂÖ•ÁöÑÔºåÁ≥ªÁªü‰ºöÁÖß‰∏ãÈù¢‰∏âÊ°£ÈáëÈ¢ùËá™Âä®Êç¢ÁÆóÊàêKPIÂ•ñÈáë„ÄÇ</p>
       <div class="table-scroll"><table>
-        <thead><tr><th>姓名</th><th class="num">底薪</th><th class="num">津贴</th><th class="num">KPI ≥95%</th><th class="num">KPI 80-94%</th><th class="num">KPI 70-79%</th><th class="num">本月达标率%</th><th class="num">达标bonus封顶</th><th class="num">达标业绩门槛</th></tr></thead>
+        <thead><tr><th>ÂßìÂêç</th><th class="num">Â∫ïËñ™</th><th class="num">Ê¥•Ë¥¥</th><th class="num">KPI ‚â•95%</th><th class="num">KPI 80-94%</th><th class="num">KPI 70-79%</th><th class="num">Êú¨ÊúàËææÊ†áÁéá%</th><th class="num">ËææÊ†ábonusÂ∞ÅÈ°∂</th><th class="num">ËææÊ†á‰∏öÁª©Èó®Êßõ</th></tr></thead>
         <tbody id="payrollSettingsBody"></tbody>
       </table></div>
-      <p class="hint" style="margin-top:8px;">「达标bonus」是看这个人当月邀约已成交业绩：达到「达标业绩门槛」才发整笔「达标bonus封顶」的金额，没达到就是 RM0，系统自动判断，不用手动输入。</p>
+      <p class="hint" style="margin-top:8px;">„ÄåËææÊ†ábonus„ÄçÊòØÁúãËøô‰∏™‰∫∫ÂΩìÊúàÈÇÄÁ∫¶Â∑≤Êàê‰∫§‰∏öÁª©ÔºöËææÂà∞„ÄåËææÊ†á‰∏öÁª©Èó®Êßõ„ÄçÊâçÂèëÊï¥Á¨î„ÄåËææÊ†ábonusÂ∞ÅÈ°∂„ÄçÁöÑÈáëÈ¢ùÔºåÊ≤°ËææÂà∞Â∞±ÊòØ RM0ÔºåÁ≥ªÁªüËá™Âä®Âà§Êñ≠Ôºå‰∏çÁî®ÊâãÂä®ËæìÂÖ•„ÄÇ</p>
     </div>
     <div class="panel">
-      <h2>Group Sales Bonus 管理</h2>
-      <p class="hint" style="margin:0 0 10px;">专场业绩这些手动加进来，员工自己会在「本月工资报告」看到这个明细。</p>
+      <h2>Group Sales Bonus ÁÆ°ÁêÜ</h2>
+      <p class="hint" style="margin:0 0 10px;">‰∏ìÂú∫‰∏öÁª©Ëøô‰∫õÊâãÂä®Âä†ËøõÊù•ÔºåÂëòÂ∑•Ëá™Â∑±‰ºöÂú®„ÄåÊú¨ÊúàÂ∑•ËµÑÊä•Âëä„ÄçÁúãÂà∞Ëøô‰∏™ÊòéÁªÜ„ÄÇ</p>
       <div class="add-row">
         <select id="bonusPerson"></select>
-        <input type="text" id="bonusLabel" placeholder="项目名称，例：8月祛斑专场" style="width:220px;" />
-        <input type="number" id="bonusAmount" placeholder="金额 RM" style="width:110px;" />
-        <button id="addBonusBtn">添加</button>
+        <input type="text" id="bonusLabel" placeholder="È°πÁõÆÂêçÁß∞Ôºå‰æãÔºö8ÊúàÁ•õÊñë‰∏ìÂú∫" style="width:220px;" />
+        <input type="number" id="bonusAmount" placeholder="ÈáëÈ¢ù RM" style="width:110px;" />
+        <button id="addBonusBtn">Ê∑ªÂä†</button>
       </div>
       <p class="error-text" id="addBonusError"></p>
       <div id="bonusItemsWrap" style="margin-top:12px;"></div>
     </div>
     <div class="panel">
-      <h2>老师手工费补登 / 编辑</h2>
-      <div class="field"><label for="at_owner">老师</label><select id="at_owner"></select></div>
-      <div class="field"><label for="at_date">日期</label><input type="date" id="at_date" /></div>
-      <div class="field"><label for="at_category">项目类别</label><select id="at_category"></select></div>
-      <div class="field"><label for="at_item">具体部位 / 项目</label><select id="at_item"></select></div>
+      <h2>ËÄÅÂ∏àÊâãÂ∑•Ë¥πË°•Áôª / ÁºñËæë</h2>
+      <div class="field"><label for="at_owner">ËÄÅÂ∏à</label><select id="at_owner"></select></div>
+      <div class="field"><label for="at_date">Êó•Êúü</label><input type="date" id="at_date" /></div>
+      <div class="field"><label for="at_category">È°πÁõÆÁ±ªÂà´</label><select id="at_category"></select></div>
+      <div class="field"><label for="at_item">ÂÖ∑‰ΩìÈÉ®‰Ωç / È°πÁõÆ</label><select id="at_item"></select></div>
       <div class="field" id="at_qty_field" style="display:none;">
-        <label for="at_qty" id="at_qty_label">数量</label>
+        <label for="at_qty" id="at_qty_label">Êï∞Èáè</label>
         <input type="number" id="at_qty" min="1" step="1" value="1" />
       </div>
-      <div class="field"><label for="at_client">客户名称</label><input type="text" id="at_client" placeholder="选填" /></div>
+      <div class="field"><label for="at_client">ÂÆ¢Êà∑ÂêçÁß∞</label><input type="text" id="at_client" placeholder="ÈÄâÂ°´" /></div>
       <div class="field">
-        <label for="at_discount">给顾客的折扣（选填）</label>
+        <label for="at_discount">ÁªôÈ°æÂÆ¢ÁöÑÊäòÊâ£ÔºàÈÄâÂ°´Ôºâ</label>
         <div style="display:flex;gap:8px;">
           <select id="at_discount_type" style="max-width:130px;">
-            <option value="pct">百分比 %</option>
-            <option value="rm">金额 RM</option>
+            <option value="pct">ÁôæÂàÜÊØî %</option>
+            <option value="rm">ÈáëÈ¢ù RM</option>
           </select>
           <input type="number" id="at_discount" min="0" step="0.01" placeholder="0" />
         </div>
       </div>
       <div class="preview-commission" id="atTeacherCommissionPreview"></div>
-      <div class="field"><label for="at_note">备注</label><input type="text" id="at_note" placeholder="选填" /></div>
+      <div class="field"><label for="at_note">Â§áÊ≥®</label><input type="text" id="at_note" placeholder="ÈÄâÂ°´" /></div>
       <div style="display:flex;gap:8px;">
-        <button class="primary" id="addAtTeacherRecordBtn" style="width:100%;">记录入账</button>
-        <button id="cancelAtEditBtn" style="display:none;white-space:nowrap;">取消编辑</button>
+        <button class="primary" id="addAtTeacherRecordBtn" style="width:100%;">ËÆ∞ÂΩïÂÖ•Ë¥¶</button>
+        <button id="cancelAtEditBtn" style="display:none;white-space:nowrap;">ÂèñÊ∂àÁºñËæë</button>
       </div>
       <p class="error-text" id="addAtTeacherRecordError"></p>
     </div>
     <div class="panel">
-      <h2>润颜术 / 睫毛 / 冰点 手工费</h2>
+      <h2>Ê∂¶È¢úÊúØ / Áù´ÊØõ / ÂÜ∞ÁÇπ ÊâãÂ∑•Ë¥π</h2>
       <div id="opRatesWrap"></div>
     </div>
     <div class="panel">
-      <h2>抗衰产品提成</h2>
+      <h2>ÊäóË°∞‰∫ßÂìÅÊèêÊàê</h2>
       <div class="roster-chips" id="antiProductChips"></div>
       <div class="add-row">
-        <input type="text" id="newProductName" placeholder="项目名称，例：298爆卡" />
-        <input type="number" id="newProductCommission" placeholder="提成 RM" style="width:110px;" />
-        <button id="addProductBtn">添加项目</button>
+        <input type="text" id="newProductName" placeholder="È°πÁõÆÂêçÁß∞Ôºå‰æãÔºö298ÁàÜÂç°" />
+        <input type="number" id="newProductCommission" placeholder="ÊèêÊàê RM" style="width:110px;" />
+        <button id="addProductBtn">Ê∑ªÂä†È°πÁõÆ</button>
       </div>
     </div>
     <div class="panel">
-      <h2>引流服务项目</h2>
+      <h2>ÂºïÊµÅÊúçÂä°È°πÁõÆ</h2>
       <div class="roster-chips" id="referralItemChips"></div>
       <div class="add-row">
-        <input type="text" id="newReferralName" placeholder="项目名称，例：Facial" />
-        <input type="number" id="newReferralAmount" placeholder="技术服务费/人 RM" style="width:130px;" />
-        <input type="number" id="newReferralInviteFee" placeholder="邀约费/组 RM" style="width:120px;" />
-        <button id="addReferralBtn">添加项目</button>
+        <input type="text" id="newReferralName" placeholder="È°πÁõÆÂêçÁß∞Ôºå‰æãÔºöFacial" />
+        <input type="number" id="newReferralAmount" placeholder="ÊäÄÊúØÊúçÂä°Ë¥π/‰∫∫ RM" style="width:130px;" />
+        <input type="number" id="newReferralInviteFee" placeholder="ÈÇÄÁ∫¶Ë¥π/ÁªÑ RM" style="width:120px;" />
+        <button id="addReferralBtn">Ê∑ªÂä†È°πÁõÆ</button>
       </div>
-      <p class="hint">技术服务费是每服务一位客人的金额（会自动乘以服务人数）；邀约费是整组固定一笔，只有勾了「本次也是邀约人」才会加上。两个金额都是固定的，员工不能自己改。</p>
+      <p class="hint">ÊäÄÊúØÊúçÂä°Ë¥πÊòØÊØèÊúçÂä°‰∏Ä‰ΩçÂÆ¢‰∫∫ÁöÑÈáëÈ¢ùÔºà‰ºöËá™Âä®‰πò‰ª•ÊúçÂä°‰∫∫Êï∞ÔºâÔºõÈÇÄÁ∫¶Ë¥πÊòØÊï¥ÁªÑÂõ∫ÂÆö‰∏ÄÁ¨îÔºåÂè™ÊúâÂãæ‰∫Ü„ÄåÊú¨Ê¨°‰πüÊòØÈÇÄÁ∫¶‰∫∫„ÄçÊâç‰ºöÂä†‰∏ä„ÄÇ‰∏§‰∏™ÈáëÈ¢ùÈÉΩÊòØÂõ∫ÂÆöÁöÑÔºåÂëòÂ∑•‰∏çËÉΩËá™Â∑±Êîπ„ÄÇ</p>
     </div>
     <div class="panel">
-      <h2>抗衰操作费项目</h2>
+      <h2>ÊäóË°∞Êìç‰ΩúË¥πÈ°πÁõÆ</h2>
       <div id="antiOpItemsWrap"></div>
       <div class="add-row">
-        <input type="text" id="newOpItemName" placeholder="项目名称，例：黄金炮" />
-        <button id="addOpItemBtn">添加项目</button>
+        <input type="text" id="newOpItemName" placeholder="È°πÁõÆÂêçÁß∞Ôºå‰æãÔºöÈªÑÈáëÁÇÆ" />
+        <button id="addOpItemBtn">Ê∑ªÂä†È°πÁõÆ</button>
       </div>
     </div>
     <div class="panel">
-      <h2>其他设置</h2>
+      <h2>ÂÖ∂‰ªñËÆæÁΩÆ</h2>
       <div class="field" style="max-width:220px;">
-        <label for="reviewDefaultInput">Review点评默认奖励金额 (RM)</label>
+        <label for="reviewDefaultInput">ReviewÁÇπËØÑÈªòËÆ§Â•ñÂä±ÈáëÈ¢ù (RM)</label>
         <input type="number" id="reviewDefaultInput" min="3" max="5" step="0.5" />
       </div>
     </div>
     <div class="panel">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
-        <h2 style="margin:0;">本月全部明细</h2>
-        <select id="adminRecordsPersonFilter" style="max-width:200px;"><option value="">全部人员</option></select>
+        <h2 style="margin:0;">Êú¨ÊúàÂÖ®ÈÉ®ÊòéÁªÜ</h2>
+        <select id="adminRecordsPersonFilter" style="max-width:200px;"><option value="">ÂÖ®ÈÉ®‰∫∫Âëò</option></select>
       </div>
       <div class="table-scroll"><table>
-        <thead><tr><th>日期</th><th>类型</th><th>人员</th><th>客户</th><th class="num">分成明细</th><th>状态</th></tr></thead>
+        <thead><tr><th>Êó•Êúü</th><th>Á±ªÂûã</th><th>‰∫∫Âëò</th><th>ÂÆ¢Êà∑</th><th class="num">ÂàÜÊàêÊòéÁªÜ</th><th>Áä∂ÊÄÅ</th></tr></thead>
         <tbody id="adminRecordsBody"></tbody>
       </table></div>
     </div>
     <div class="panel">
-      <h2>结算总结（复制发给团队）</h2>
-      <p class="hint" style="margin:0 0 10px;">选一个人，会把TA当月「已审核（待结算）」和「已结算」的记录分开列出来，整理成一段文字，复制后可以直接发到 WhatsApp。</p>
+      <h2>ÁªìÁÆóÊÄªÁªìÔºàÂ§çÂà∂ÂèëÁªôÂõ¢ÈòüÔºâ</h2>
+      <p class="hint" style="margin:0 0 10px;">ÈÄâ‰∏Ä‰∏™‰∫∫Ôºå‰ºöÊääTAÂΩìÊúà„ÄåÂ∑≤ÂÆ°Ê†∏ÔºàÂæÖÁªìÁÆóÔºâ„ÄçÂíå„ÄåÂ∑≤ÁªìÁÆó„ÄçÁöÑËÆ∞ÂΩïÂàÜÂºÄÂàóÂá∫Êù•ÔºåÊï¥ÁêÜÊàê‰∏ÄÊÆµÊñáÂ≠óÔºåÂ§çÂà∂ÂêéÂèØ‰ª•Áõ¥Êé•ÂèëÂà∞ WhatsApp„ÄÇ</p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
         <select id="statementPerson"></select>
-        <button id="genStatementBtn">生成结算讯息</button>
+        <button id="genStatementBtn">ÁîüÊàêÁªìÁÆóËÆØÊÅØ</button>
       </div>
-      <textarea id="statementOutput" readonly style="min-height:180px;font-family:var(--font-num);font-size:12.5px;line-height:1.6;" placeholder="点「生成结算讯息」查看内容"></textarea>
+      <textarea id="statementOutput" readonly style="min-height:180px;font-family:var(--font-num);font-size:12.5px;line-height:1.6;" placeholder="ÁÇπ„ÄåÁîüÊàêÁªìÁÆóËÆØÊÅØ„ÄçÊü•ÁúãÂÜÖÂÆπ"></textarea>
       <div style="margin-top:10px;">
-        <button class="primary" id="copyStatementBtn" style="width:auto;">复制文字</button>
+        <button class="primary" id="copyStatementBtn" style="width:auto;">Â§çÂà∂ÊñáÂ≠ó</button>
       </div>
     </div>
   `;
@@ -1463,7 +1463,7 @@ function buildAdminSection(){
     const btn = document.getElementById('copyStatementBtn');
     try{ await navigator.clipboard.writeText(out.value); }
     catch(e){ out.removeAttribute('readonly'); out.select(); document.execCommand('copy'); out.setAttribute('readonly','readonly'); }
-    const old = btn.textContent; btn.textContent = '已复制'; setTimeout(()=>{ btn.textContent = old; }, 1500);
+    const old = btn.textContent; btn.textContent = 'Â∑≤Â§çÂà∂'; setTimeout(()=>{ btn.textContent = old; }, 1500);
   });
 }
 
@@ -1471,7 +1471,7 @@ function buildAdminSection(){
 function buildAdminTeacherPanel(){
   const ownerSel = document.getElementById('at_owner');
   const teachers = people.filter(p=>p.active && p.role==='teacher').slice().sort((a,b)=>a.name.localeCompare(b.name));
-  ownerSel.innerHTML = teachers.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('') || '<option value="">还没有老师</option>';
+  ownerSel.innerHTML = teachers.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('') || '<option value="">ËøòÊ≤°ÊúâËÄÅÂ∏à</option>';
 
   document.getElementById('at_date').value = new Date().toISOString().slice(0,10);
   const catSel = document.getElementById('at_category');
@@ -1500,7 +1500,7 @@ function renderAtTeacherItemSelect(){
   const catKey = document.getElementById('at_category').value;
   const cat = TEACHER_CATEGORIES.find(c=>c.key===catKey);
   const sel = document.getElementById('at_item');
-  sel.innerHTML = (cat?cat.items:[]).map(i=>`<option value="${escapeHtml(i.name)}">${escapeHtml(i.name)}（RM${i.fee}${i.perUnit?'/'+(i.unitLabel||'支'):''}）</option>`).join('');
+  sel.innerHTML = (cat?cat.items:[]).map(i=>`<option value="${escapeHtml(i.name)}">${escapeHtml(i.name)}ÔºàRM${i.fee}${i.perUnit?'/'+(i.unitLabel||'ÊîØ'):''}Ôºâ</option>`).join('');
   updateAtTeacherQtyVisibility();
 }
 
@@ -1516,7 +1516,7 @@ function updateAtTeacherQtyVisibility(){
   const show = !!(found && found.item.perUnit);
   qtyField.style.display = show ? '' : 'none';
   if(!show){ document.getElementById('at_qty').value = 1; }
-  else{ document.getElementById('at_qty_label').textContent = `${found.item.unitLabel||'支'}数`; }
+  else{ document.getElementById('at_qty_label').textContent = `${found.item.unitLabel||'ÊîØ'}Êï∞`; }
 }
 
 function currentAtTeacherQty(){
@@ -1548,18 +1548,18 @@ function updateAtTeacherPreview(){
   const discountAmount = teacherDiscountAmount(baseAmount, dType, dValue);
   const finalFee = baseAmount - discountAmount;
   if(dValue>0){
-    const discountLabel = dType==='rm' ? `折扣 -RM${dValue}` : `折扣 ${dValue}%`;
-    box.innerHTML = `<div class="row"><span>原价手工费</span><span class="num">${fmt(baseAmount)}</span></div>
+    const discountLabel = dType==='rm' ? `ÊäòÊâ£ -RM${dValue}` : `ÊäòÊâ£ ${dValue}%`;
+    box.innerHTML = `<div class="row"><span>Âéü‰ª∑ÊâãÂ∑•Ë¥π</span><span class="num">${fmt(baseAmount)}</span></div>
       <div class="row"><span>${discountLabel}</span><span class="num">-${fmt(discountAmount)}</span></div>
-      <div class="row"><span>实收手工费</span><span class="num">${fmt(finalFee)}</span></div>`;
+      <div class="row"><span>ÂÆûÊî∂ÊâãÂ∑•Ë¥π</span><span class="num">${fmt(finalFee)}</span></div>`;
   } else {
-    box.innerHTML = `<div class="row"><span>手工费</span><span class="num">${fmt(baseAmount)}</span></div>`;
+    box.innerHTML = `<div class="row"><span>ÊâãÂ∑•Ë¥π</span><span class="num">${fmt(baseAmount)}</span></div>`;
   }
 }
 
 function exitAtEditMode(){
   editingTeacherRecordId = null;
-  document.getElementById('addAtTeacherRecordBtn').textContent = '记录入账';
+  document.getElementById('addAtTeacherRecordBtn').textContent = 'ËÆ∞ÂΩïÂÖ•Ë¥¶';
   document.getElementById('cancelAtEditBtn').style.display = 'none';
 }
 
@@ -1575,10 +1575,10 @@ async function submitAtTeacherRecord(){
   const dValue = currentAtTeacherDiscountValue();
   const qty = currentAtTeacherQty();
   const note = document.getElementById('at_note').value.trim();
-  if(!ownerId){ errEl.textContent = '请先添加一位老师。'; return; }
-  if(!date){ errEl.textContent = '请填写日期。'; return; }
+  if(!ownerId){ errEl.textContent = 'ËØ∑ÂÖàÊ∑ªÂä†‰∏Ä‰ΩçËÄÅÂ∏à„ÄÇ'; return; }
+  if(!date){ errEl.textContent = 'ËØ∑Â°´ÂÜôÊó•Êúü„ÄÇ'; return; }
   const found = teacherFindItem(catKey, itemName);
-  if(!found){ errEl.textContent = '请选择项目类别和具体部位。'; return; }
+  if(!found){ errEl.textContent = 'ËØ∑ÈÄâÊã©È°πÁõÆÁ±ªÂà´ÂíåÂÖ∑‰ΩìÈÉ®‰Ωç„ÄÇ'; return; }
 
   const baseAmount = found.item.fee * qty;
   const discountAmount = teacherDiscountAmount(baseAmount, dType, dValue);
@@ -1596,7 +1596,7 @@ async function submitAtTeacherRecord(){
   } else {
     ({ error } = await sb.from('records').insert(rec));
   }
-  if(error){ errEl.textContent = '保存失败：'+error.message; return; }
+  if(error){ errEl.textContent = '‰øùÂ≠òÂ§±Ë¥•Ôºö'+error.message; return; }
 
   const wasEditing = !!editingTeacherRecordId;
   exitAtEditMode();
@@ -1626,7 +1626,7 @@ function startEditTeacherRecord(rec){
   document.getElementById('at_discount').value = parsed.discountValue || '';
 
   editingTeacherRecordId = rec.id;
-  document.getElementById('addAtTeacherRecordBtn').textContent = '更新记录';
+  document.getElementById('addAtTeacherRecordBtn').textContent = 'Êõ¥Êñ∞ËÆ∞ÂΩï';
   document.getElementById('cancelAtEditBtn').style.display = '';
   updateAtTeacherPreview();
   document.getElementById('adminSection').scrollIntoView({behavior:'smooth', block:'start'});
@@ -1639,9 +1639,9 @@ function buildStatementLines(recs, person, adRateByPerson){
     const sum = allocs.reduce((s,a)=>s+a.amount,0);
     total += sum;
     const detail = r.type==='teacher_service' ? teacherItemLabel(r.productName) : recordDetailText(r);
-    const detailText = (detail && detail!=='—') ? `（${detail}）` : '';
+    const detailText = (detail && detail!=='‚Äî') ? `Ôºà${detail}Ôºâ` : '';
     const clientPart = r.client ? ` ${r.client}` : '';
-    return `- ${r.date} ${TYPES[r.type].label}${clientPart}${detailText}：${fmt(sum)}`;
+    return `- ${r.date} ${TYPES[r.type].label}${clientPart}${detailText}Ôºö${fmt(sum)}`;
   }).filter(Boolean);
   return { lines, total };
 }
@@ -1661,15 +1661,15 @@ function buildStatementText(personId){
   const paid = buildStatementLines(mineOf('paid'), person, adRateByPerson);
 
   const [y,m] = ym.split('-');
-  const header = `【MJPRO 提成结算】${person.name} · ${y}年${parseInt(m,10)}月`;
+  const header = `„ÄêMJPRO ÊèêÊàêÁªìÁÆó„Äë${person.name} ¬∑ ${y}Âπ¥${parseInt(m,10)}Êúà`;
 
   const sections = [header, ''];
-  sections.push('已审核（待结算）：');
-  sections.push(...(reviewed.lines.length ? reviewed.lines : ['本月还没有已审核待结算的记录。']));
-  sections.push(`已审核合计：${fmt(reviewed.total)}`, '');
-  sections.push('已结算：');
-  sections.push(...(paid.lines.length ? paid.lines : ['本月还没有已结算的记录。']));
-  sections.push(`已结算合计：${fmt(paid.total)}`);
+  sections.push('Â∑≤ÂÆ°Ê†∏ÔºàÂæÖÁªìÁÆóÔºâÔºö');
+  sections.push(...(reviewed.lines.length ? reviewed.lines : ['Êú¨ÊúàËøòÊ≤°ÊúâÂ∑≤ÂÆ°Ê†∏ÂæÖÁªìÁÆóÁöÑËÆ∞ÂΩï„ÄÇ']));
+  sections.push(`Â∑≤ÂÆ°Ê†∏ÂêàËÆ°Ôºö${fmt(reviewed.total)}`, '');
+  sections.push('Â∑≤ÁªìÁÆóÔºö');
+  sections.push(...(paid.lines.length ? paid.lines : ['Êú¨ÊúàËøòÊ≤°ÊúâÂ∑≤ÁªìÁÆóÁöÑËÆ∞ÂΩï„ÄÇ']));
+  sections.push(`Â∑≤ÁªìÁÆóÂêàËÆ°Ôºö${fmt(paid.total)}`);
 
   return sections.join('\n');
 }
@@ -1712,7 +1712,7 @@ function renderPayrollAdminPanel(){
       <td class="num"><input type="number" class="num" min="0" step="1" value="${p.targetBonusPool||0}" data-payroll-field="target_bonus_pool" data-person="${p.id}" style="width:90px;" /></td>
       <td class="num"><input type="number" class="num" min="0" step="1" value="${p.targetBonusThreshold||0}" data-payroll-field="target_bonus_threshold" data-person="${p.id}" style="width:100px;" /></td>
     </tr>`;
-  }).join('') || '<tr><td colspan="9" class="empty">还没有人员</td></tr>';
+  }).join('') || '<tr><td colspan="9" class="empty">ËøòÊ≤°Êúâ‰∫∫Âëò</td></tr>';
 
   body.querySelectorAll('[data-payroll-field]').forEach(inp=>{
     inp.addEventListener('change', async ()=>{
@@ -1752,11 +1752,11 @@ function renderPayrollAdminPanel(){
 function renderBonusItemsWrap(){
   const wrap = document.getElementById('bonusItemsWrap');
   if(!wrap) return;
-  if(bonusItems.length===0){ wrap.innerHTML = '<p class="empty">本月还没有Bonus项目</p>'; return; }
+  if(bonusItems.length===0){ wrap.innerHTML = '<p class="empty">Êú¨ÊúàËøòÊ≤°ÊúâBonusÈ°πÁõÆ</p>'; return; }
   wrap.innerHTML = bonusItems.map(b=>{
     const person = people.find(p=>p.id===b.personId);
-    return `<div class="roster-chip" style="margin-bottom:8px;">${escapeHtml(person?person.name:'未知')} · ${escapeHtml(b.label||'Bonus')} <b class="num" style="margin-left:4px;">${fmt(b.amount)}</b>
-      <button class="del" data-del-bonus="${b.id}" aria-label="删除">✕</button>
+    return `<div class="roster-chip" style="margin-bottom:8px;">${escapeHtml(person?person.name:'Êú™Áü•')} ¬∑ ${escapeHtml(b.label||'Bonus')} <b class="num" style="margin-left:4px;">${fmt(b.amount)}</b>
+      <button class="del" data-del-bonus="${b.id}" aria-label="Âà†Èô§">‚úï</button>
     </div>`;
   }).join('');
   wrap.querySelectorAll('[data-del-bonus]').forEach(btn=>{
@@ -1776,10 +1776,10 @@ async function addBonusItem(){
   const label = document.getElementById('bonusLabel').value.trim();
   const amount = Number(document.getElementById('bonusAmount').value)||0;
   const ym = document.getElementById('monthPicker').value;
-  if(!personId){ errEl.textContent = '请选择人员。'; return; }
-  if(!label || !amount){ errEl.textContent = '请填写项目名称和金额。'; return; }
+  if(!personId){ errEl.textContent = 'ËØ∑ÈÄâÊã©‰∫∫Âëò„ÄÇ'; return; }
+  if(!label || !amount){ errEl.textContent = 'ËØ∑Â°´ÂÜôÈ°πÁõÆÂêçÁß∞ÂíåÈáëÈ¢ù„ÄÇ'; return; }
   const { error } = await sb.from('bonus_items').insert({ person_id:personId, ym, label, amount });
-  if(error){ errEl.textContent = '保存失败：'+error.message; return; }
+  if(error){ errEl.textContent = '‰øùÂ≠òÂ§±Ë¥•Ôºö'+error.message; return; }
   document.getElementById('bonusLabel').value = '';
   document.getElementById('bonusAmount').value = '';
   await loadPayrollForMonth();
@@ -1794,13 +1794,13 @@ function renderRoster(){
   const inactive = people.filter(p=>!p.active);
   wrap.innerHTML = active.map(p=>`
     <span class="roster-chip">${escapeHtml(p.name)} <span class="hint">(${roleLabel(p.role)})</span>
-      ${p.id===currentProfile.id ? '' : `<button data-remove-person="${p.id}" style="margin-left:6px;">移除</button>`}
-    </span>`).join('') || '<p class="empty">还没有人员</p>';
+      ${p.id===currentProfile.id ? '' : `<button data-remove-person="${p.id}" style="margin-left:6px;">ÁßªÈô§</button>`}
+    </span>`).join('') || '<p class="empty">ËøòÊ≤°Êúâ‰∫∫Âëò</p>';
 
   wrap.querySelectorAll('[data-remove-person]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       const p = people.find(x=>x.id===btn.getAttribute('data-remove-person'));
-      if(!confirm(`确定要移除「${p.name}」吗？移除后TA不能再登录，但TA之前的记录都会保留。`)) return;
+      if(!confirm(`Á°ÆÂÆöË¶ÅÁßªÈô§„Äå${p.name}„ÄçÂêóÔºüÁßªÈô§ÂêéTA‰∏çËÉΩÂÜçÁôªÂΩïÔºå‰ΩÜTA‰πãÂâçÁöÑËÆ∞ÂΩïÈÉΩ‰ºö‰øùÁïô„ÄÇ`)) return;
       await sb.from('profiles').update({active:false}).eq('id', p.id);
       await loadAllData();
       renderRoster(); renderOpRates(); renderAntiOpItems();
@@ -1815,9 +1815,9 @@ function renderRoster(){
     wrap.parentNode.insertBefore(inactiveWrap, wrap.nextSibling);
   }
   if(inactive.length===0){ inactiveWrap.innerHTML = ''; return; }
-  inactiveWrap.innerHTML = `<p class="hint" style="margin-bottom:6px;">已移除：</p>` + inactive.map(p=>`
+  inactiveWrap.innerHTML = `<p class="hint" style="margin-bottom:6px;">Â∑≤ÁßªÈô§Ôºö</p>` + inactive.map(p=>`
     <span class="roster-chip" style="opacity:0.6;">${escapeHtml(p.name)}
-      <button data-restore-person="${p.id}" style="margin-left:6px;">恢复</button>
+      <button data-restore-person="${p.id}" style="margin-left:6px;">ÊÅ¢Â§ç</button>
     </span>`).join('');
   inactiveWrap.querySelectorAll('[data-restore-person]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
@@ -1836,17 +1836,17 @@ async function addPerson(){
   errEl.textContent = '';
   const name = nameInput.value.trim();
   const pin = pinInput.value.trim();
-  if(!name || !/^\d{6}$/.test(pin)){ errEl.textContent = '请填写姓名，PIN 需要是6位数字。'; return; }
+  if(!name || !/^\d{6}$/.test(pin)){ errEl.textContent = 'ËØ∑Â°´ÂÜôÂßìÂêçÔºåPIN ÈúÄË¶ÅÊòØ6‰ΩçÊï∞Â≠ó„ÄÇ'; return; }
   const email = `u-${uid()}@mjpro.internal`;
   const { data: adminSessionData } = await sb.auth.getSession();
   const adminSession = adminSessionData.session;
   const { data: signData, error: signErr } = await sb.auth.signUp({ email, password: pin });
-  if(signErr || !signData.user){ errEl.textContent = '创建登录账号失败：'+(signErr?signErr.message:'未知错误'); return; }
+  if(signErr || !signData.user){ errEl.textContent = 'ÂàõÂª∫ÁôªÂΩïË¥¶Âè∑Â§±Ë¥•Ôºö'+(signErr?signErr.message:'Êú™Áü•ÈîôËØØ'); return; }
   if(adminSession){
     await sb.auth.setSession({ access_token: adminSession.access_token, refresh_token: adminSession.refresh_token });
   }
   const { error: profErr } = await sb.from('profiles').insert({ id:signData.user.id, name, email, role:roleSel.value });
-  if(profErr){ errEl.textContent = '创建人员资料失败：'+profErr.message; return; }
+  if(profErr){ errEl.textContent = 'ÂàõÂª∫‰∫∫ÂëòËµÑÊñôÂ§±Ë¥•Ôºö'+profErr.message; return; }
   nameInput.value=''; pinInput.value='';
   await loadAllData();
   renderRoster(); renderOpRates();
@@ -1861,7 +1861,7 @@ function renderOpRates(){
         <span>${op.label}</span>
       </div>
       <div class="roster-chips">
-        ${people.filter(p=>p.active && p.role!=='teacher').map(p=>`<span class="roster-chip">${escapeHtml(p.name)} <input type="number" class="num" min="0" step="1" value="${p[op.field]||0}" data-op-rate="${p.id}" data-op-field="${op.field}" /></span>`).join('') || '<span class="empty">先添加人员</span>'}
+        ${people.filter(p=>p.active && p.role!=='teacher').map(p=>`<span class="roster-chip">${escapeHtml(p.name)} <input type="number" class="num" min="0" step="1" value="${p[op.field]||0}" data-op-rate="${p.id}" data-op-field="${op.field}" /></span>`).join('') || '<span class="empty">ÂÖàÊ∑ªÂä†‰∫∫Âëò</span>'}
       </div>
     </div>
   `).join('');
@@ -1885,8 +1885,8 @@ function renderAntiProducts(){
   wrap.innerHTML = antiAgingProducts.map(p=>`
     <span class="roster-chip">${escapeHtml(p.name)}
       <input type="number" class="num" min="0" step="1" value="${p.commission}" data-product-rate="${p.id}" />
-      <button class="del" data-del-product="${p.id}">✕</button>
-    </span>`).join('') || '<p class="empty">还没有添加抗衰项目</p>';
+      <button class="del" data-del-product="${p.id}">‚úï</button>
+    </span>`).join('') || '<p class="empty">ËøòÊ≤°ÊúâÊ∑ªÂä†ÊäóË°∞È°πÁõÆ</p>';
   wrap.querySelectorAll('[data-product-rate]').forEach(inp=>{
     inp.addEventListener('change', async ()=>{
       await sb.from('antiaging_products').update({commission:Number(inp.value)||0}).eq('id', inp.getAttribute('data-product-rate'));
@@ -1916,12 +1916,12 @@ function renderReferralItems(){
   if(!wrap) return;
   wrap.innerHTML = referralItems.map(i=>`
     <span class="roster-chip">${escapeHtml(i.name)}
-      <span class="hint" style="margin-left:4px;">技术费/人</span>
+      <span class="hint" style="margin-left:4px;">ÊäÄÊúØË¥π/‰∫∫</span>
       <input type="number" class="num" min="0" step="1" value="${i.amount}" data-referral-rate="${i.id}" style="width:70px;" />
-      <span class="hint">邀约费/组</span>
+      <span class="hint">ÈÇÄÁ∫¶Ë¥π/ÁªÑ</span>
       <input type="number" class="num" min="0" step="1" value="${i.inviteFee}" data-referral-invite="${i.id}" style="width:70px;" />
-      <button class="del" data-del-referral="${i.id}">✕</button>
-    </span>`).join('') || '<p class="empty">还没有添加引流服务项目</p>';
+      <button class="del" data-del-referral="${i.id}">‚úï</button>
+    </span>`).join('') || '<p class="empty">ËøòÊ≤°ÊúâÊ∑ªÂä†ÂºïÊµÅÊúçÂä°È°πÁõÆ</p>';
   wrap.querySelectorAll('[data-referral-rate]').forEach(inp=>{
     inp.addEventListener('change', async ()=>{
       await sb.from('referral_items').update({amount:Number(inp.value)||0}).eq('id', inp.getAttribute('data-referral-rate'));
@@ -1960,15 +1960,15 @@ function renderAntiOpItems(){
       <div class="op-item-header">
         <span>${escapeHtml(item.name)}</span>
         <span style="display:flex;align-items:center;gap:12px;">
-          <label><input type="checkbox" data-split-opitem="${item.id}" ${item.split?'checked':''} /> 与公司平分（50%）</label>
-          <button class="del" data-del-opitem="${item.id}">✕</button>
+          <label><input type="checkbox" data-split-opitem="${item.id}" ${item.split?'checked':''} /> ‰∏éÂÖ¨Âè∏Âπ≥ÂàÜÔºà50%Ôºâ</label>
+          <button class="del" data-del-opitem="${item.id}">‚úï</button>
         </span>
       </div>
       <div class="roster-chips" style="margin-bottom:0;">
-        ${people.filter(p=>p.active && p.role!=='teacher').map(p=>`<span class="roster-chip">${escapeHtml(p.name)} <input type="number" class="num" min="0" step="1" value="${(item.rates&&item.rates[p.id])||0}" data-opitem="${item.id}" data-opperson="${p.id}" /></span>`).join('') || '<span class="empty">先添加人员</span>'}
+        ${people.filter(p=>p.active && p.role!=='teacher').map(p=>`<span class="roster-chip">${escapeHtml(p.name)} <input type="number" class="num" min="0" step="1" value="${(item.rates&&item.rates[p.id])||0}" data-opitem="${item.id}" data-opperson="${p.id}" /></span>`).join('') || '<span class="empty">ÂÖàÊ∑ªÂä†‰∫∫Âëò</span>'}
       </div>
     </div>
-  `).join('') || '<p class="empty">还没有操作费项目</p>';
+  `).join('') || '<p class="empty">ËøòÊ≤°ÊúâÊìç‰ΩúË¥πÈ°πÁõÆ</p>';
 
   wrap.querySelectorAll('[data-del-opitem]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
@@ -2013,15 +2013,15 @@ function renderAdminSummary(){
   const personTotals = {}; let companyTotal = 0; let payoutTotal = 0;
   records.forEach(r=>{
     allocationsFor(r, adRateByPerson).forEach(a=>{
-      if(a.who==='公司'){ companyTotal += a.amount; }
+      if(a.who==='ÂÖ¨Âè∏'){ companyTotal += a.amount; }
       else { personTotals[a.who] = (personTotals[a.who]||0)+a.amount; payoutTotal += a.amount; }
     });
   });
   const strip = document.getElementById('adminSummaryStrip');
   const personCards = Object.keys(personTotals).map(name=>`<div class="stat"><p class="label">${escapeHtml(name)}</p><p class="value num">${fmt(personTotals[name])}</p></div>`).join('');
   strip.innerHTML = `
-    <div class="stat total"><p class="label">个人提成合计</p><p class="value num">${fmt(payoutTotal)}</p></div>
-    <div class="stat"><p class="label">公司抽成合计</p><p class="value num">${fmt(companyTotal)}</p></div>
+    <div class="stat total"><p class="label">‰∏™‰∫∫ÊèêÊàêÂêàËÆ°</p><p class="value num">${fmt(payoutTotal)}</p></div>
+    <div class="stat"><p class="label">ÂÖ¨Âè∏ÊäΩÊàêÂêàËÆ°</p><p class="value num">${fmt(companyTotal)}</p></div>
     ${personCards}
   `;
 }
@@ -2040,7 +2040,7 @@ function renderAdminRecordsTable(){
   if(filterSel){
     const prevVal = filterSel.value;
     const sorted = [...people].sort((a,b)=>a.name.localeCompare(b.name));
-    filterSel.innerHTML = '<option value="">全部人员</option>' + sorted.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+    filterSel.innerHTML = '<option value="">ÂÖ®ÈÉ®‰∫∫Âëò</option>' + sorted.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
     if(sorted.some(p=>p.id===prevVal)) filterSel.value = prevVal;
     filterId = filterSel.value;
   }
@@ -2051,23 +2051,23 @@ function renderAdminRecordsTable(){
     const allocs = allocationsFor(r, adRateByPerson);
     const total = allocs.reduce((s,a)=>s+a.amount,0);
     const who = personName(recordPrimaryPersonId(r));
-    const allocText = allocs.map(a=>`${escapeHtml(a.who)} · ${escapeHtml(a.role)}：<b class="num">${fmt(a.amount)}</b>`).join('<br/>');
+    const allocText = allocs.map(a=>`${escapeHtml(a.who)} ¬∑ ${escapeHtml(a.role)}Ôºö<b class="num">${fmt(a.amount)}</b>`).join('<br/>');
     return `<tr>
       <td class="num">${r.date}</td>
       <td>${TYPES[r.type].label}</td>
       <td>${escapeHtml(who)}</td>
-      <td>${escapeHtml(r.client||'—')}</td>
-      <td class="num">${allocText}<div style="margin-top:4px;font-weight:600;">合计 ${fmt(total)}</div></td>
+      <td>${escapeHtml(r.client||'‚Äî')}</td>
+      <td class="num">${allocText}<div style="margin-top:4px;font-weight:600;">ÂêàËÆ° ${fmt(total)}</div></td>
       <td>
           <select data-status="${r.id}" class="pill ${statusClass(r.status)}" style="border:none;">
-            <option value="pending" ${r.status==='pending'||!r.status?'selected':''}>待审核</option>
-            <option value="reviewed" ${r.status==='reviewed'?'selected':''}>已审核</option>
-            <option value="paid" ${r.status==='paid'?'selected':''}>已结算</option>
+            <option value="pending" ${r.status==='pending'||!r.status?'selected':''}>ÂæÖÂÆ°Ê†∏</option>
+            <option value="reviewed" ${r.status==='reviewed'?'selected':''}>Â∑≤ÂÆ°Ê†∏</option>
+            <option value="paid" ${r.status==='paid'?'selected':''}>Â∑≤ÁªìÁÆó</option>
           </select>
-          ${r.type==='teacher_service' ? `<button data-edit-teacher="${r.id}" style="margin-left:4px;">编辑</button>` : `<button data-edit="${r.id}" style="margin-left:4px;">编辑</button>`}
-          <button data-del="${r.id}" style="margin-left:4px;">删除</button></td>
+          ${r.type==='teacher_service' ? `<button data-edit-teacher="${r.id}" style="margin-left:4px;">ÁºñËæë</button>` : `<button data-edit="${r.id}" style="margin-left:4px;">ÁºñËæë</button>`}
+          <button data-del="${r.id}" style="margin-left:4px;">Âà†Èô§</button></td>
     </tr>`;
-  }).join('') || '<tr><td colspan="6" class="empty">本月还没有记录</td></tr>';
+  }).join('') || '<tr><td colspan="6" class="empty">Êú¨ÊúàËøòÊ≤°ÊúâËÆ∞ÂΩï</td></tr>';
 
   body.querySelectorAll('[data-status]').forEach(sel=>{
     sel.addEventListener('change', async ()=>{
@@ -2090,7 +2090,7 @@ function renderAdminRecordsTable(){
   });
   body.querySelectorAll('[data-del]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
-      if(!confirm('删除这条记录？')) return;
+      if(!confirm('Âà†Èô§ËøôÊù°ËÆ∞ÂΩïÔºü')) return;
       await sb.from('records').delete().eq('id', btn.getAttribute('data-del'));
       await renderAll();
     });
